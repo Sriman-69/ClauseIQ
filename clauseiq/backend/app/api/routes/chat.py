@@ -10,8 +10,15 @@ async def chat(query: ChatQuery):
     """
     Chat with the RAG system.
     """
-    response = await chat_service.chat(
-        query=query.query, 
-        conversation_id=query.conversation_id
-    )
-    return response
+    try:
+        response = await chat_service.chat(
+            query=query.query, 
+            conversation_id=query.conversation_id
+        )
+        return response
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))

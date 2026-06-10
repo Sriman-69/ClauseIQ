@@ -4,6 +4,12 @@ python-multipart
 sqlalchemy
 pydantic
 google-generativeai
+fastapi
+uvicorn
+python-multipart
+sqlalchemy
+pydantic
+google-generativeai
 pymupdf
 faiss-cpu
 numpy
@@ -12,3 +18,4 @@ starlette
 pickleshare
 langchain-google-genai
 langchain-core
+reportlab

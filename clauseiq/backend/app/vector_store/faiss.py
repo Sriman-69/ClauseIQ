@@ -11,6 +11,8 @@ class FAISSVectorStore:
         self.load()
 
     def add_embeddings(self, embeddings, metadatas: list):
+        print("FAISS add_embeddings called")
+        print("Embeddings count:", len(embeddings))
         embeddings_np = np.array(embeddings, dtype=np.float32)
         if self.index is None:
             d = embeddings_np.shape[1]
@@ -19,6 +21,7 @@ class FAISSVectorStore:
         self.index.add(embeddings_np)
         self.metadata.extend(metadatas)
         self.save()
+        print("FAISS saved")
 
     def search(self, query_embedding, k: int):
         print("FAISS total vectors:", self.index.ntotal if self.index else 0)
@@ -30,9 +33,11 @@ class FAISSVectorStore:
         results = []
         for i in range(k):
             if I[0][i] != -1:
+                meta = self.metadata[I[0][i]]
                 results.append({
                     "score": float(D[0][i]),
-                    "metadata": self.metadata[I[0][i]]
+                    "metadata": meta,
+                    "content": meta.get("content", "")
                 })
         return results
 

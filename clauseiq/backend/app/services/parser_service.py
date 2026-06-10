@@ -34,7 +34,26 @@ class ParserService:
 
         # Embed chunks
         contents = [chunk.content for chunk in chunks]
+        print("Chunks created:", len(contents))
         embeddings = await self.embedding_service.embed_batch(contents)
+        print("Embeddings created:", len(embeddings))
 
         # Store embeddings in FAISS
-        self.embedding_service.vector_store.add_embeddings(embeddings, [{"document_id": str(chunk.document_id), "chunk_id": str(chunk.id), "page": chunk.page, "section": chunk.section, "document_name": document.filename} for chunk in chunks])
+        print("Saving to FAISS...")
+        self.embedding_service.vector_store.add_embeddings(embeddings, [{
+            "document_id": str(chunk.document_id), 
+            "chunk_id": str(chunk.id), 
+            "page": chunk.page, 
+            "section": chunk.section, 
+            "document_name": document.filename,
+            "content": chunk.content
+        } for chunk in chunks])
+
+        # Extract structured clauses for Phase 4 version comparison
+        try:
+            from app.services.clause_extraction_service import ClauseExtractionService
+            clause_service = ClauseExtractionService()
+            await clause_service.extract_clauses(document.id)
+            print("Clauses extracted and saved.")
+        except Exception as e:
+            print(f"Clause extraction failed: {e}")

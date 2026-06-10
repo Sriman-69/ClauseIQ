@@ -1,42 +1,55 @@
+import json
+from app.db.session import get_db
+from app.models.document import Document, Chunk
 from app.services.search_service import SearchService
-from app.schemas.chat import ChatResponse, Citation
-import google.generativeai as genai
-from app.core.config import settings
+from app.core.exceptions import QuotaExceededException
+from app.services.ai_service import AIService
+
+import json
+from app.db.session import get_db
+from app.models.document import Document, Chunk
+from app.services.search_service import SearchService
+from app.core.exceptions import QuotaExceededException
+from app.services.ai_service import AIService
 
 class ChatService:
     def __init__(self):
+        self.db = next(get_db())
         self.search_service = SearchService()
-        genai.configure(api_key=settings.GEMINI_API_KEY)
-        self.model = genai.GenerativeModel('gemini-2.5-flash')
+        self.ai_service = AIService()
 
-    async def chat(self, query: str, conversation_id: str = None) -> ChatResponse:
-        # Retrieve context
-        search_results = await self.search_service.search(query=query, top_k=3)
-
-        context = ""
+    async def chat(self, query: str) -> dict:
+        # 1. Retrieve relevant chunks
+        search_results = await self.search_service.search(query, top_k=5)
+        
+        context_text = ""
         citations = []
-        for res in search_results:
-            context += f"Source: {res.document_name}, Page: {res.page_number}\nContent: {res.content}\n\n"
-            citations.append(Citation(
-                document_name=res.document_name,
-                page_number=res.page_number,
-                section=res.section
-            ))
+        for i, res in enumerate(search_results):
+            context_text += f"[Citation {i+1}] Page {res.page_number}, Section {res.section}: {res.content}\n\n"
+            citations.append({
+                "document_name": res.document_name,
+                "page_number": res.page_number,
+                "section": res.section
+            })
 
-        # Build prompt
         prompt = f"""
-        You are a helpful legal research assistant. Answer the user's question based on the provided context.
-        Your answer must be grounded in the provided sources.
-        
-        Context:
-        {context}
-        
-        Question: {query}
-        
-        Answer:
+        You are an expert legal assistant. Answer the user's query based ONLY on the provided document context.
+        If the answer is not in the context, explicitly state that you cannot find it in the document.
+        Always reference the citation numbers (e.g., [Citation 1]) when providing facts.
+
+        CONTEXT:
+        {context_text}
+
+        USER QUERY:
+        {query}
         """
 
-        # Generate response
-        response = self.model.generate_content(prompt)
+        try:
+            answer = await self.ai_service.generate_text(prompt)
+        except QuotaExceededException as e:
+            answer = e.message
 
-        return ChatResponse(response=response.text, citations=citations)
+        return {
+            "response": answer,
+            "citations": citations
+        }

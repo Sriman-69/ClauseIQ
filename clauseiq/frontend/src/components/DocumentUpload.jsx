@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 
-const DocumentUpload = () => {
+const DocumentUpload = ({ onUploadSuccess }) => {
   const [file, setFile] = useState(null);
   const [message, setMessage] = useState('');
 
@@ -25,6 +25,9 @@ const DocumentUpload = () => {
         },
       });
       setMessage(`File uploaded successfully: ${response.data.filename}`);
+      if (onUploadSuccess) {
+        onUploadSuccess(response.data.id);
+      }
     } catch (error) {
       setMessage('Error uploading file.');
       console.error(error);
