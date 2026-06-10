@@ -3,6 +3,10 @@ from starlette.middleware.cors import CORSMiddleware
 
 from app.api.routes import documents, search, chat
 from app.core.config import settings
+from app.db.session import engine
+from app.models.document import Base
+
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title=settings.PROJECT_NAME,

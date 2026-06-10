@@ -10,6 +10,9 @@ class SearchService:
         query_embedding = await self.embedding_service.embed_single(query)
         results = self.embedding_service.vector_store.search(query_embedding, top_k)
         
+        print("Query:", query)
+        print("Results:", results)
+        
         search_results = []
         for result in results:
             metadata = result['metadata']

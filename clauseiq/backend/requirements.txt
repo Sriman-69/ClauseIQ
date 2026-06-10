@@ -10,3 +10,5 @@ numpy
 cachetools
 starlette
 pickleshare
+langchain-google-genai
+langchain-core

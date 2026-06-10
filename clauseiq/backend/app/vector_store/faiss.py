@@ -10,20 +10,23 @@ class FAISSVectorStore:
         self.metadata = []
         self.load()
 
-    def add_embeddings(self, embeddings: np.ndarray, metadatas: list):
+    def add_embeddings(self, embeddings, metadatas: list):
+        embeddings_np = np.array(embeddings, dtype=np.float32)
         if self.index is None:
-            d = embeddings.shape[1]
+            d = embeddings_np.shape[1]
             self.index = faiss.IndexFlatL2(d)
         
-        self.index.add(embeddings)
+        self.index.add(embeddings_np)
         self.metadata.extend(metadatas)
         self.save()
 
-    def search(self, query_embedding: np.ndarray, k: int):
+    def search(self, query_embedding, k: int):
+        print("FAISS total vectors:", self.index.ntotal if self.index else 0)
         if self.index is None:
             return []
             
-        D, I = self.index.search(np.array([query_embedding]), k)
+        query_np = np.array([query_embedding], dtype=np.float32)
+        D, I = self.index.search(query_np, k)
         results = []
         for i in range(k):
             if I[0][i] != -1:

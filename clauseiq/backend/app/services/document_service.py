@@ -22,8 +22,13 @@ class DocumentService:
 
         document_id = str(uuid.uuid4())
         
+        import os
+        
         # Store the file
-        storage_path = f"uploads/{document_id}_{file.filename}"
+        UPLOAD_DIR = "uploads"
+        os.makedirs(UPLOAD_DIR, exist_ok=True)
+        storage_path = os.path.join(UPLOAD_DIR, f"{document_id}_{file.filename}")
+        
         with open(storage_path, "wb") as f:
             f.write(content)
 
