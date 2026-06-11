@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/Card';
 import { Skeleton } from '../ui/Skeleton';
 import { Badge } from '../ui/Badge';
 import { AlertTriangle, AlertCircle, Info } from 'lucide-react';
 import { motion } from 'framer-motion';
+import './views.css';
 
 const RiskAnalysisView = ({ documentId }) => {
   const [data, setData] = useState(null);
@@ -32,65 +32,77 @@ const RiskAnalysisView = ({ documentId }) => {
   );
 
   const RiskCard = ({ risk, level }) => {
-    let colorVar = "var(--status-info)";
     let Icon = Info;
-    
-    if (level === 'high') { colorVar = "var(--status-danger)"; Icon = AlertTriangle; }
-    if (level === 'medium') { colorVar = "var(--status-warning)"; Icon = AlertCircle; }
+    if (level === 'high') Icon = AlertTriangle;
+    if (level === 'medium') Icon = AlertCircle;
 
     return (
-      <Card style={{ borderLeft: `4px solid ${colorVar}`, marginBottom: '1rem' }}>
-        <CardHeader style={{ paddingBottom: '0.5rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <CardTitle style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.125rem' }}>
-              <Icon color={colorVar} size={20} /> {risk.risk}
-            </CardTitle>
-            <Badge variant={level === 'high' ? 'danger' : level === 'medium' ? 'warning' : 'outline'}>
-              {level.toUpperCase()}
-            </Badge>
+      <div className={`risk-item-card ${level}`}>
+        <div className="risk-card-header">
+          <div className="risk-title">
+            <Icon size={18} />
+            <span>{risk.risk}</span>
           </div>
-        </CardHeader>
-        <CardContent>
-          <p style={{ color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{risk.reason}</p>
-          <div style={{ background: 'var(--bg-tertiary)', padding: '0.75rem', borderRadius: 'var(--radius-sm)', borderLeft: '2px solid var(--border-strong)', fontSize: '0.875rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
-            {risk.citation !== 'None' ? `"${risk.citation}"` : 'Citation unavailable'}
+          <Badge 
+            variant={level === 'high' ? 'danger' : level === 'medium' ? 'warning' : 'outline'}
+            style={{ fontSize: '0.75rem', padding: '0.2rem 0.6rem' }}
+          >
+            {level.toUpperCase()}
+          </Badge>
+        </div>
+        <p className="risk-reason">{risk.reason}</p>
+        {risk.citation && risk.citation !== 'None' && (
+          <div className="risk-citation">
+            "{risk.citation}"
           </div>
-        </CardContent>
-      </Card>
+        )}
+      </div>
     );
   };
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-      
-      <div>
-        <h2 style={{ color: 'var(--status-danger)', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-          <AlertTriangle /> High Risks ({data?.high_risks?.length || 0})
+    <motion.div 
+      initial={{ opacity: 0 }} 
+      animate={{ opacity: 1 }} 
+      style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}
+    >
+      {/* High Risks Section */}
+      <div className="risk-section">
+        <h2 className="risk-level-title high">
+          <AlertTriangle size={20} /> High Risks ({data?.high_risks?.length || 0})
         </h2>
         {data?.high_risks?.length === 0 ? (
-           <p style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>No high risks detected in this document.</p>
+          <p style={{ color: 'var(--text-muted)', fontStyle: 'italic', margin: 0, paddingLeft: '0.5rem' }}>
+            No high risks detected in this document.
+          </p>
         ) : (
           data?.high_risks?.map((r, i) => <RiskCard key={`h-${i}`} risk={r} level="high" />)
         )}
       </div>
 
-      <div>
-        <h2 style={{ color: 'var(--status-warning)', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-          <AlertCircle /> Medium Risks ({data?.medium_risks?.length || 0})
+      {/* Medium Risks Section */}
+      <div className="risk-section">
+        <h2 className="risk-level-title medium">
+          <AlertCircle size={20} /> Medium Risks ({data?.medium_risks?.length || 0})
         </h2>
         {data?.medium_risks?.length === 0 ? (
-           <p style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>No medium risks detected.</p>
+          <p style={{ color: 'var(--text-muted)', fontStyle: 'italic', margin: 0, paddingLeft: '0.5rem' }}>
+            No medium risks detected.
+          </p>
         ) : (
           data?.medium_risks?.map((r, i) => <RiskCard key={`m-${i}`} risk={r} level="medium" />)
         )}
       </div>
 
-      <div>
-        <h2 style={{ color: 'var(--status-info)', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-          <Info /> Low Risks/Notables ({data?.low_risks?.length || 0})
+      {/* Low Risks Section */}
+      <div className="risk-section">
+        <h2 className="risk-level-title low">
+          <Info size={20} /> Low Risks/Notables ({data?.low_risks?.length || 0})
         </h2>
         {data?.low_risks?.length === 0 ? (
-           <p style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>No low risks detected.</p>
+          <p style={{ color: 'var(--text-muted)', fontStyle: 'italic', margin: 0, paddingLeft: '0.5rem' }}>
+            No low risks detected.
+          </p>
         ) : (
           data?.low_risks?.map((r, i) => <RiskCard key={`l-${i}`} risk={r} level="low" />)
         )}

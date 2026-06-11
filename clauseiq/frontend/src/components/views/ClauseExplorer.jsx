@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Card } from '../ui/Card';
 import { Skeleton } from '../ui/Skeleton';
 import { ChevronDown, ChevronUp, FileText, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import './views.css';
 
 const ClauseExplorer = ({ documentId }) => {
   const [clauses, setClauses] = useState([]);
@@ -40,37 +40,36 @@ const ClauseExplorer = ({ documentId }) => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      <div style={{ position: 'relative' }}>
-        <Search size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+      
+      {/* Premium Glassmorphic Search Bar */}
+      <div className="clause-search-container">
         <input
           type="text"
           placeholder="Search clauses..."
+          className="clause-search-input"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          style={{
-            width: '100%',
-            padding: '1rem 1rem 1rem 3rem',
-            background: 'var(--bg-secondary)',
-            border: '1px solid var(--border-strong)',
-            borderRadius: 'var(--radius-md)',
-            color: 'var(--text-primary)',
-            fontSize: '1rem'
-          }}
         />
+        <Search size={18} className="clause-search-icon" />
       </div>
 
+      {/* Extracted Clauses Glass Cards List */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
         {filteredClauses.map(clause => (
-          <Card key={clause.id} style={{ overflow: 'hidden' }}>
+          <div key={clause.id} className="clause-card">
             <div 
               onClick={() => setExpandedId(expandedId === clause.id ? null : clause.id)}
-              style={{ padding: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', background: expandedId === clause.id ? 'var(--bg-tertiary)' : 'transparent' }}
+              className={`clause-header ${expandedId === clause.id ? 'expanded' : ''}`}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontWeight: 500 }}>
-                <FileText size={18} color="var(--brand-primary)" />
-                {clause.title}
+              <div className="clause-title-text">
+                <FileText size={18} style={{ color: 'var(--text-secondary)' }} />
+                <span>{clause.title}</span>
               </div>
-              {expandedId === clause.id ? <ChevronUp size={20} color="var(--text-muted)" /> : <ChevronDown size={20} color="var(--text-muted)" />}
+              {expandedId === clause.id ? (
+                <ChevronUp size={20} color="var(--text-muted)" />
+              ) : (
+                <ChevronDown size={20} color="var(--text-muted)" />
+              )}
             </div>
             
             <AnimatePresence>
@@ -79,18 +78,21 @@ const ClauseExplorer = ({ documentId }) => {
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: 'auto', opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
-                  style={{ borderTop: '1px solid var(--border-subtle)', background: 'var(--bg-primary)' }}
+                  transition={{ duration: 0.25, ease: 'easeInOut' }}
+                  style={{ overflow: 'hidden' }}
                 >
-                  <div style={{ padding: '1.5rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
-                    {clause.content}
-                    <div style={{ marginTop: '1rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+                  <div className="clause-expanded-content">
+                    <p style={{ margin: 0, color: 'var(--text-secondary)' }}>
+                      {clause.content}
+                    </p>
+                    <div className="clause-page-badge">
                       Source: Page {clause.page_number}
                     </div>
                   </div>
                 </motion.div>
               )}
             </AnimatePresence>
-          </Card>
+          </div>
         ))}
         {filteredClauses.length === 0 && (
           <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>

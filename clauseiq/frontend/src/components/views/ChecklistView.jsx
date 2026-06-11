@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Card, CardContent } from '../ui/Card';
 import { Badge } from '../ui/Badge';
 import { Skeleton } from '../ui/Skeleton';
 import { motion } from 'framer-motion';
 import { CheckCircle2, AlertCircle, HelpCircle } from 'lucide-react';
+import './views.css';
 
 const ChecklistView = ({ documentId }) => {
   const [items, setItems] = useState([]);
@@ -38,51 +38,46 @@ const ChecklistView = ({ documentId }) => {
 
   const getStatusIcon = (status) => {
     switch(status.toLowerCase()) {
-      case 'present': return <CheckCircle2 color="var(--status-success)" size={20} />;
-      case 'missing': return <AlertCircle color="var(--status-danger)" size={20} />;
-      default: return <HelpCircle color="var(--status-warning)" size={20} />;
+      case 'present': return <CheckCircle2 color="var(--status-success)" size={18} />;
+      case 'missing': return <AlertCircle color="var(--status-danger)" size={18} />;
+      default: return <HelpCircle color="var(--status-warning)" size={18} />;
     }
   };
 
   const getStatusBadge = (status) => {
     switch(status.toLowerCase()) {
-      case 'present': return <Badge variant="success">Present</Badge>;
-      case 'missing': return <Badge variant="danger">Missing</Badge>;
-      default: return <Badge variant="warning">Unclear</Badge>;
+      case 'present': return <Badge variant="success" style={{ fontSize: '0.75rem', padding: '0.2rem 0.6rem' }}>Present</Badge>;
+      case 'missing': return <Badge variant="danger" style={{ fontSize: '0.75rem', padding: '0.2rem 0.6rem' }}>Missing</Badge>;
+      default: return <Badge variant="warning" style={{ fontSize: '0.75rem', padding: '0.2rem 0.6rem' }}>Unclear</Badge>;
     }
   };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       
-      <div style={{ display: 'flex', gap: '0.5rem' }}>
+      {/* Premium Tab Filters */}
+      <div className="filter-button-group">
         {['All', 'Present', 'Missing', 'Unclear'].map(f => (
           <button 
             key={f} 
             onClick={() => setFilter(f)}
-            style={{ 
-              padding: '0.5rem 1rem', 
-              borderRadius: '9999px',
-              border: '1px solid var(--border-strong)',
-              background: filter === f ? 'var(--brand-primary)' : 'transparent',
-              color: filter === f ? 'white' : 'var(--text-secondary)',
-              cursor: 'pointer'
-            }}
+            className={`filter-button ${filter === f ? 'active' : ''}`}
           >
             {f}
           </button>
         ))}
       </div>
 
-      <Card>
+      {/* Premium Glassmorphic Table Card */}
+      <div className="checklist-table-card">
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+          <table className="checklist-table">
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--border-subtle)', background: 'var(--bg-tertiary)' }}>
-                <th style={{ padding: '1rem', fontWeight: 500, color: 'var(--text-muted)' }}>Requirement</th>
-                <th style={{ padding: '1rem', fontWeight: 500, color: 'var(--text-muted)' }}>Status</th>
-                <th style={{ padding: '1rem', fontWeight: 500, color: 'var(--text-muted)' }}>Explanation</th>
-                <th style={{ padding: '1rem', fontWeight: 500, color: 'var(--text-muted)' }}>Evidence</th>
+              <tr>
+                <th style={{ width: '25%' }}>Requirement</th>
+                <th style={{ width: '12%' }}>Status</th>
+                <th style={{ width: '38%' }}>Explanation</th>
+                <th style={{ width: '25%' }}>Evidence</th>
               </tr>
             </thead>
             <tbody>
@@ -91,18 +86,17 @@ const ChecklistView = ({ documentId }) => {
                   key={idx}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.05 }}
-                  style={{ borderBottom: '1px solid var(--border-subtle)' }}
+                  transition={{ delay: idx * 0.04 }}
                 >
-                  <td style={{ padding: '1rem', fontWeight: 500, color: 'var(--text-primary)' }}>
+                  <td style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       {getStatusIcon(item.status)}
                       {item.title}
                     </div>
                   </td>
-                  <td style={{ padding: '1rem' }}>{getStatusBadge(item.status)}</td>
-                  <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>{item.explanation}</td>
-                  <td style={{ padding: '1rem', color: 'var(--text-muted)', fontSize: '0.875rem', fontStyle: 'italic' }}>
+                  <td>{getStatusBadge(item.status)}</td>
+                  <td style={{ color: 'var(--text-secondary)' }}>{item.explanation}</td>
+                  <td style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontStyle: 'italic' }}>
                     {item.citation !== 'None' ? `"${item.citation}"` : '-'}
                   </td>
                 </motion.tr>
@@ -117,7 +111,7 @@ const ChecklistView = ({ documentId }) => {
             </tbody>
           </table>
         </div>
-      </Card>
+      </div>
     </div>
   );
 };

@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { Button } from '../ui/Button';
-import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { Download, FileJson, FileText, FileBadge } from 'lucide-react';
 import { motion } from 'framer-motion';
+import './views.css';
 
 const ExportModal = ({ documentId }) => {
   const [downloading, setDownloading] = useState(false);
@@ -24,39 +24,56 @@ const ExportModal = ({ documentId }) => {
   };
 
   const formats = [
-    { id: 'pdf', name: 'PDF Report', icon: FileBadge, color: 'var(--status-danger)', desc: 'Professional, uneditable report for external sharing.' },
-    { id: 'docx', name: 'Word Document', icon: FileText, color: 'var(--brand-primary)', desc: 'Fully editable report for internal review and redlining.' },
-    { id: 'json', name: 'Raw JSON', icon: FileJson, color: 'var(--status-warning)', desc: 'Machine-readable format for API integrations and data lakes.' }
+    { id: 'pdf', name: 'PDF Report', icon: FileBadge, desc: 'Professional, uneditable report for external sharing.' },
+    { id: 'docx', name: 'Word Document', icon: FileText, desc: 'Fully editable report for internal review and redlining.' },
+    { id: 'json', name: 'Raw JSON', icon: FileJson, desc: 'Machine-readable format for API integrations and data lakes.' }
   ];
 
   return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={{ maxWidth: '800px', margin: '0 auto' }}>
-      <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-        <h1 style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>Export Intelligence Center</h1>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '1.125rem' }}>
+    <motion.div 
+      initial={{ opacity: 0, y: 15 }} 
+      animate={{ opacity: 1, y: 0 }} 
+      style={{ maxWidth: '900px', margin: '0 auto', padding: '1rem 0' }}
+    >
+      {/* Centered Premium Header */}
+      <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
+        <h1 style={{ fontSize: '2.5rem', fontWeight: 700, letterSpacing: '-0.03em', marginBottom: '1rem', color: 'var(--text-primary)' }}>
+          Export Intelligence Center
+        </h1>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '1.05rem', maxWidth: '600px', margin: '0 auto', lineHeight: '1.6' }}>
           Generate comprehensive audit reports containing the executive summary, compliance checklist, and risk analysis.
         </p>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+      {/* Grid Layout Cards */}
+      <div className="export-center-grid">
         {formats.map(f => (
-          <Card key={f.id} style={{ display: 'flex', alignItems: 'center', padding: '1.5rem', gap: '1.5rem', transition: 'all 0.2s', border: '1px solid var(--border-subtle)' }}>
-            <div style={{ background: 'var(--bg-tertiary)', padding: '1rem', borderRadius: 'var(--radius-md)' }}>
-              <f.icon size={32} color={f.color} />
+          <div key={f.id} className="export-card">
+            <div className="export-icon-box">
+              <f.icon size={28} />
             </div>
-            <div style={{ flex: 1 }}>
-              <h3 style={{ fontSize: '1.25rem', marginBottom: '0.25rem' }}>{f.name}</h3>
-              <p style={{ color: 'var(--text-muted)', margin: 0 }}>{f.desc}</p>
+            
+            <div className="export-details">
+              <h3 className="export-title">{f.name}</h3>
+              <p className="export-desc">{f.desc}</p>
             </div>
+            
             <Button 
-              variant="secondary" 
+              variant="primary" 
               onClick={() => handleExport(f.id)}
               disabled={downloading !== false}
-              style={{ display: 'flex', gap: '0.5rem' }}
+              style={{ display: 'flex', gap: '0.5rem', width: '100%', justifyContent: 'center' }}
             >
-              {downloading === f.id ? 'Generating...' : <> <Download size={16} /> Export </>}
+              {downloading === f.id ? (
+                'Generating...'
+              ) : (
+                <>
+                  <Download size={16} />
+                  <span>Export</span>
+                </>
+              )}
             </Button>
-          </Card>
+          </div>
         ))}
       </div>
     </motion.div>

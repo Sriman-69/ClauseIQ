@@ -1,9 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/Card';
-import { Badge } from '../ui/Badge';
-import { FileText, Layers, AlertTriangle, CheckCircle, ShieldCheck } from 'lucide-react';
+import { FileText, Layers, AlertTriangle, CheckCircle, ShieldCheck, Database, HelpCircle } from 'lucide-react';
 import axios from 'axios';
 import gsap from 'gsap';
+import './views.css';
 
 const Overview = ({ document }) => {
   const [metrics, setMetrics] = useState(null);
@@ -17,89 +16,124 @@ const Overview = ({ document }) => {
   }, []);
 
   useEffect(() => {
-    // GSAP Timeline for dashboard entry
-    const tl = gsap.timeline({ defaults: { ease: 'back.out(1.7)' } });
+    // Premium GSAP animation sequence
+    const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
     
     tl.fromTo(headerRef.current, 
-      { opacity: 0, y: -20 }, 
-      { opacity: 1, y: 0, duration: 0.8 }
+      { opacity: 0, y: -15 }, 
+      { opacity: 1, y: 0, duration: 0.6 }
     )
     .fromTo(cardsRef.current,
-      { opacity: 0, scale: 0.8 },
-      { opacity: 1, scale: 1, duration: 0.5, stagger: 0.1 },
-      "-=0.4"
+      { opacity: 0, y: 15 },
+      { opacity: 1, y: 0, duration: 0.5, stagger: 0.08 },
+      "-=0.3"
     );
   }, [document]);
 
   if (!document) return null;
 
+  const totalCacheHits = metrics?.metrics?.cache_hit || 0;
+
   return (
     <div className="overview-container">
-      <div className="document-header" ref={headerRef}>
-        <div>
-          <h1 className="document-title">
-            <FileText color="var(--brand-primary)" />
+      {/* Premium Document Header Card */}
+      <div className="document-header-card" ref={headerRef}>
+        <div className="document-title-area">
+          <h1 className="document-filename">
+            <FileText size={28} style={{ color: 'var(--text-primary)' }} />
             {document.filename}
-            <Badge variant="default">v{document.version_number}</Badge>
+            <span style={{ fontSize: '0.875rem', fontWeight: 500, opacity: 0.6, background: 'rgba(255,255,255,0.06)', padding: '0.25rem 0.5rem', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.08)' }}>
+              v{document.version_number}
+            </span>
           </h1>
-          <div className="document-meta">
-            <span>ID: {document.id}</span>
+          <div className="document-metadata">
+            <span>ID: <code style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>{document.id}</code></span>
+            <span>•</span>
             <span>Uploaded: {new Date(document.upload_timestamp).toLocaleDateString()}</span>
           </div>
         </div>
-        <Badge variant="success" style={{ fontSize: '1rem', padding: '0.5rem 1rem' }}>
-          <ShieldCheck size={18} style={{ marginRight: '0.5rem' }} />
+        <div className="document-status-badge">
+          <ShieldCheck size={18} />
           Processed Successfully
-        </Badge>
+        </div>
       </div>
 
-      <h2 style={{ marginBottom: '1.5rem', color: 'var(--text-secondary)' }}>Document Intelligence Overview</h2>
+      <div className="overview-section-title">
+        <HelpCircle size={18} style={{ color: 'var(--text-muted)' }} />
+        Document Intelligence Overview
+      </div>
       
+      {/* Premium Glassmorphic Grid */}
       <div className="overview-grid">
-        <Card ref={el => cardsRef.current[0] = el} style={{ background: 'rgba(22, 22, 26, 0.6)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.05)' }}>
-          <CardHeader>
-            <CardDescription style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Layers size={16} /> Total Clauses Extracted
-            </CardDescription>
-            <div className="metric-value">24</div>
-          </CardHeader>
-        </Card>
+        <div 
+          className="metric-card info" 
+          ref={el => cardsRef.current[0] = el}
+        >
+          <div className="metric-header">
+            <span className="metric-title">Total Clauses Extracted</span>
+            <div className="metric-icon-box">
+              <Layers size={18} />
+            </div>
+          </div>
+          <div className="metric-body">
+            <h2 className="metric-value">24</h2>
+          </div>
+        </div>
         
-        <Card ref={el => cardsRef.current[1] = el} style={{ background: 'rgba(22, 22, 26, 0.6)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.05)' }}>
-          <CardHeader>
-            <CardDescription style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <AlertTriangle size={16} color="var(--status-danger)" /> High Risks Detected
-            </CardDescription>
-            <div className="metric-value" style={{ color: 'var(--status-danger)' }}>3</div>
-          </CardHeader>
-        </Card>
+        <div 
+          className="metric-card danger" 
+          ref={el => cardsRef.current[1] = el}
+        >
+          <div className="metric-header">
+            <span className="metric-title">High Risks Detected</span>
+            <div className="metric-icon-box">
+              <AlertTriangle size={18} />
+            </div>
+          </div>
+          <div className="metric-body">
+            <h2 className="metric-value" style={{ color: 'var(--status-danger)' }}>3</h2>
+          </div>
+        </div>
 
-        <Card ref={el => cardsRef.current[2] = el} style={{ background: 'rgba(22, 22, 26, 0.6)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.05)' }}>
-          <CardHeader>
-            <CardDescription style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <CheckCircle size={16} color="var(--status-success)" /> Compliance Score
-            </CardDescription>
-            <div className="metric-value" style={{ color: 'var(--status-success)' }}>85%</div>
-          </CardHeader>
-        </Card>
+        <div 
+          className="metric-card success" 
+          ref={el => cardsRef.current[2] = el}
+        >
+          <div className="metric-header">
+            <span className="metric-title">Compliance Score</span>
+            <div className="metric-icon-box">
+              <CheckCircle size={18} />
+            </div>
+          </div>
+          <div className="metric-body">
+            <h2 className="metric-value" style={{ color: 'var(--status-success)' }}>85%</h2>
+          </div>
+        </div>
 
-        {metrics && (
-           <Card ref={el => cardsRef.current[3] = el} style={{ background: 'rgba(22, 22, 26, 0.6)', backdropFilter: 'blur(12px)', borderLeft: '4px solid var(--brand-primary)' }}>
-             <CardHeader>
-               <CardDescription>Global Cache Hits</CardDescription>
-               <div className="metric-value">{metrics.metrics.cache_hit || 0}</div>
-             </CardHeader>
-           </Card>
-        )}
+        <div 
+          className="metric-card info" 
+          ref={el => cardsRef.current[3] = el}
+        >
+          <div className="metric-header">
+            <span className="metric-title">Global Cache Hits</span>
+            <div className="metric-icon-box">
+              <Database size={18} />
+            </div>
+          </div>
+          <div className="metric-body">
+            <h2 className="metric-value">{totalCacheHits}</h2>
+          </div>
+        </div>
       </div>
       
-      <Card ref={el => cardsRef.current[4] = el} style={{ marginTop: '2rem', padding: '2rem', textAlign: 'center', borderStyle: 'dashed', background: 'rgba(22, 22, 26, 0.3)' }}>
-        <h3 style={{ marginBottom: '1rem' }}>Ready for Analysis</h3>
-        <p style={{ color: 'var(--text-muted)' }}>
-          Navigate using the tabs below to view the Executive Summary, Compliance Checklist, 
-          Risk Profile, or chat directly with the document.
+      {/* Ready for Analysis Card */}
+      <div className="ready-analysis-card" ref={el => cardsRef.current[4] = el}>
+        <div className="ready-title">Ready for Analysis</div>
+        <p className="ready-desc">
+          Navigate using the tabs below to explore the detailed executive summary, 
+          compliance checklists, risk profiles, or run instant document-scoped RAG chat queries.
         </p>
-      </Card>
+      </div>
     </div>
   );
 };
