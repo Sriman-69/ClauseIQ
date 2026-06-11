@@ -51,28 +51,28 @@ ClauseIQ follows a highly decoupled, abstraction-centric architecture designed f
 graph TD;
     Client[React Frontend] -->|JWT Auth Header| API[FastAPI Router / get_current_user]
     
-    subgraph Authentication & Authorization
+    subgraph "Authentication & Authorization"
         API -->|JWT Validation| AuthContext[Auth Service]
     end
 
-    subgraph Routing & Isolated Services
+    subgraph "Routing & Isolated Services"
         API -->|tenant context: user_id| Services[Business Services]
         Services --> AIService[AI Gateway]
     end
 
-    subgraph Abstraction Interfaces
+    subgraph "Abstraction Interfaces"
         Services -->|IStorageProvider| Storage[LocalStorageProvider]
         Services -->|IVectorStore + user_id| Vectors[FAISSVectorStore]
         Services -->|DB Repositories + user_id| Repos[SQL Repositories]
     end
 
-    subgraph Physical Data Layer (Tenant Partitioned)
+    subgraph "Physical Data Layer (Tenant Partitioned)"
         Storage --> Disk[(Local disk / uploads/)]
-        Vectors --> FAISSIndex[(faiss_index.bin)]
+        Vectors --> FAISSIndex["faiss_index.bin"]
         Repos --> SQLiteDB[(SQLite / test.db)]
     end
 
-    subgraph External
+    subgraph "External"
         AIService <-->|GenAI API / Rate Limited| Gemini[Google Gemini 2.5]
     end
 
