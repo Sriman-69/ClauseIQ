@@ -5,7 +5,7 @@ from app.schemas.analysis import RiskResponse
 router = APIRouter()
 risk_service = RiskService()
 
-@router.post("/documents/{document_id}/risks", response_model=RiskResponse)
+@router.get("/documents/{document_id}/risks", response_model=RiskResponse)
 async def analyze_risks(document_id: str):
     try:
         return await risk_service.analyze_risks(document_id)

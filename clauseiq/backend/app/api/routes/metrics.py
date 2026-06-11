@@ -4,7 +4,7 @@ from app.models.document import Metrics
 
 router = APIRouter()
 
-@router.get("/")
+@router.get("")
 def get_metrics():
     db = next(get_db())
     metrics_data = db.query(Metrics).all()

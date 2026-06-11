@@ -17,7 +17,7 @@ class Document(DocumentBase):
     upload_timestamp: datetime
     
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class Chunk(BaseModel):
     id: str
@@ -27,4 +27,15 @@ class Chunk(BaseModel):
     content: str
     
     class Config:
-        orm_mode = True
+        from_attributes = True
+
+class ClauseResponse(BaseModel):
+    id: str
+    document_id: str
+    clause_identifier: str
+    title: str
+    content: str
+    page_number: Optional[int] = 1
+
+    class Config:
+        from_attributes = True

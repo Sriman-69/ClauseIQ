@@ -29,7 +29,7 @@ class RiskService:
         # 1. Check Snapshot/Cache
         snapshot = self.db.query(AnalysisSnapshot).filter(
             AnalysisSnapshot.document_id == document_id,
-            AnalysisSnapshot.document_hash == document.file_hash,
+            AnalysisSnapshot.document_hash == document.content_hash,
             AnalysisSnapshot.analysis_type == 'risks'
         ).first()
 
@@ -80,7 +80,7 @@ class RiskService:
         new_snapshot = AnalysisSnapshot(
             id=str(uuid.uuid4()),
             document_id=document_id,
-            document_hash=document.file_hash,
+            document_hash=document.content_hash,
             analysis_type="risks",
             result_json=json.dumps(result)
         )

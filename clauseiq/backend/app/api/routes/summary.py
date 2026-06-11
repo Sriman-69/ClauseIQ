@@ -5,7 +5,7 @@ from app.schemas.analysis import SummaryResponse
 router = APIRouter()
 summary_service = SummaryService()
 
-@router.post("/documents/{document_id}/summary", response_model=SummaryResponse)
+@router.get("/documents/{document_id}/summary", response_model=SummaryResponse)
 async def generate_summary(document_id: str):
     try:
         return await summary_service.generate_summary(document_id)

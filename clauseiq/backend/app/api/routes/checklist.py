@@ -6,7 +6,7 @@ from app.schemas.analysis import ChecklistItem
 router = APIRouter()
 checklist_service = ChecklistService()
 
-@router.post("/documents/{document_id}/checklist", response_model=List[ChecklistItem])
+@router.get("/documents/{document_id}/checklist", response_model=List[ChecklistItem])
 async def generate_checklist(document_id: str):
     try:
         return await checklist_service.generate_checklist(document_id)

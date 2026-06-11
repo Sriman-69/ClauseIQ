@@ -13,6 +13,7 @@ async def chat(query: ChatQuery):
     try:
         response = await chat_service.chat(
             query=query.query, 
+            document_id=query.document_id,
             conversation_id=query.conversation_id
         )
         return response

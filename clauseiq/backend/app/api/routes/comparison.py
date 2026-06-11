@@ -4,7 +4,7 @@ from app.schemas.comparison import ComparisonRequest, ComparisonDashboardRespons
 from app.services.comparison_service import ComparisonService
 from app.services.comparison_export_service import ComparisonExportService
 from app.db.session import get_db
-from app.models.document import AnalysisCache, Document
+from app.models.document import AnalysisSnapshot, Document
 
 router = APIRouter()
 comparison_service = ComparisonService()
@@ -17,9 +17,9 @@ async def compare_documents(request: ComparisonRequest):
         cache_key = f"{request.doc_a_id}_{request.doc_b_id}"
         
         # Check cache
-        cached = db.query(AnalysisCache).filter(
-            AnalysisCache.document_id == cache_key,
-            AnalysisCache.analysis_type == 'comparison'
+        cached = db.query(AnalysisSnapshot).filter(
+            AnalysisSnapshot.document_id == cache_key,
+            AnalysisSnapshot.analysis_type == 'comparison'
         ).first()
         
         if cached:
@@ -55,7 +55,7 @@ async def compare_documents(request: ComparisonRequest):
         }
         
         import uuid
-        cache_entry = AnalysisCache(
+        cache_entry = AnalysisSnapshot(
             id=str(uuid.uuid4()),
             document_id=cache_key,
             analysis_type="comparison",
@@ -76,9 +76,9 @@ async def compare_documents(request: ComparisonRequest):
 async def get_comparison(comparison_id: str):
     try:
         db = next(get_db())
-        cached = db.query(AnalysisCache).filter(
-            AnalysisCache.document_id == comparison_id,
-            AnalysisCache.analysis_type == 'comparison'
+        cached = db.query(AnalysisSnapshot).filter(
+            AnalysisSnapshot.document_id == comparison_id,
+            AnalysisSnapshot.analysis_type == 'comparison'
         ).first()
         if cached:
             return json.loads(cached.result_json)
@@ -98,9 +98,9 @@ async def export_comparison(request: ComparisonRequest):
         doc_b = db.query(Document).filter(Document.id == request.doc_b_id).first()
         
         cache_key = f"{request.doc_a_id}_{request.doc_b_id}"
-        cached = db.query(AnalysisCache).filter(
-            AnalysisCache.document_id == cache_key,
-            AnalysisCache.analysis_type == 'comparison'
+        cached = db.query(AnalysisSnapshot).filter(
+            AnalysisSnapshot.document_id == cache_key,
+            AnalysisSnapshot.analysis_type == 'comparison'
         ).first()
         
         if cached:

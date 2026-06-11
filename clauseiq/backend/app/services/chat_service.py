@@ -5,22 +5,15 @@ from app.services.search_service import SearchService
 from app.core.exceptions import QuotaExceededException
 from app.services.ai_service import AIService
 
-import json
-from app.db.session import get_db
-from app.models.document import Document, Chunk
-from app.services.search_service import SearchService
-from app.core.exceptions import QuotaExceededException
-from app.services.ai_service import AIService
-
 class ChatService:
     def __init__(self):
         self.db = next(get_db())
         self.search_service = SearchService()
         self.ai_service = AIService()
 
-    async def chat(self, query: str) -> dict:
+    async def chat(self, query: str, document_id: str = None, conversation_id: str = None) -> dict:
         # 1. Retrieve relevant chunks
-        search_results = await self.search_service.search(query, top_k=5)
+        search_results = await self.search_service.search(query, document_id=document_id, top_k=5)
         
         context_text = ""
         citations = []

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from typing import List
 
-from app.schemas.document import Document, DocumentCreate
+from app.schemas.document import Document, DocumentCreate, ClauseResponse
 from app.services.document_service import DocumentService
 
 router = APIRouter()
@@ -55,3 +55,11 @@ async def get_documents():
     """
     documents = await document_service.get_all_documents()
     return documents
+
+@router.get("/documents/{document_id}/clauses", response_model=List[ClauseResponse])
+async def get_document_clauses(document_id: str):
+    """
+    Get all extracted clauses for a document.
+    """
+    clauses = await document_service.get_clauses(document_id=document_id)
+    return clauses

@@ -6,15 +6,17 @@ class SearchService:
     def __init__(self):
         self.embedding_service = EmbeddingService()
 
-    async def search(self, query: str, top_k: int = 5) -> List[SearchResultItem]:
+    async def search(self, query: str, document_id: str = None, top_k: int = 5) -> List[SearchResultItem]:
         print("================================")
         print("QUERY:", query)
+        print("DOCUMENT ID:", document_id)
         
         # 1. FAISS Semantic Search
         query_embedding = await self.embedding_service.embed_single(query)
         semantic_results = self.embedding_service.vector_store.search(
             query_embedding, 
-            top_k * 2
+            top_k * 2,
+            document_id=document_id
         )
 
         query_tokens = set(query.lower().split())

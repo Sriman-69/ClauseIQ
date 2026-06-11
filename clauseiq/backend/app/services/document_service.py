@@ -4,7 +4,7 @@ from fastapi import UploadFile
 from typing import List
 
 from app.db.session import get_db
-from app.models.document import Document
+from app.models.document import Document, Chunk, Clause
 from app.services.parser_service import ParserService
 
 class DocumentService:
@@ -64,3 +64,29 @@ class DocumentService:
 
     async def get_all_documents(self) -> List[Document]:
         return self.db.query(Document).all()
+
+    async def get_clauses(self, document_id: str) -> List[Clause]:
+        clauses = self.db.query(Clause).filter(Clause.document_id == document_id).all()
+        chunks = self.db.query(Chunk).filter(Chunk.document_id == document_id).all()
+        
+        for clause in clauses:
+            clause.page_number = 1
+            best_overlap = 0
+            c_content = clause.content.lower().strip()
+            if not c_content:
+                continue
+            for chunk in chunks:
+                chk_content = chunk.content.lower().strip()
+                if chk_content in c_content:
+                    overlap = len(chk_content)
+                elif c_content in chk_content:
+                    overlap = len(c_content)
+                else:
+                    words_c = set(c_content.split())
+                    words_chk = set(chk_content.split())
+                    overlap = len(words_c & words_chk)
+                
+                if overlap > best_overlap:
+                    best_overlap = overlap
+                    clause.page_number = chunk.page
+        return clauses

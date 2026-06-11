@@ -23,22 +23,27 @@ class FAISSVectorStore:
         self.save()
         print("FAISS saved")
 
-    def search(self, query_embedding, k: int):
+    def search(self, query_embedding, k: int, document_id: str = None):
         print("FAISS total vectors:", self.index.ntotal if self.index else 0)
         if self.index is None:
             return []
             
         query_np = np.array([query_embedding], dtype=np.float32)
-        D, I = self.index.search(query_np, k)
+        search_k = self.index.ntotal if document_id else k
+        D, I = self.index.search(query_np, search_k)
         results = []
-        for i in range(k):
+        for i in range(len(I[0])):
             if I[0][i] != -1:
                 meta = self.metadata[I[0][i]]
+                if document_id and str(meta.get("document_id")) != str(document_id):
+                    continue
                 results.append({
                     "score": float(D[0][i]),
                     "metadata": meta,
                     "content": meta.get("content", "")
                 })
+                if len(results) == k:
+                    break
         return results
 
     def save(self):

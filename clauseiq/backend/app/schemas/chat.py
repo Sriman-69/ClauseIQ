@@ -4,6 +4,7 @@ from typing import Optional, List
 class ChatQuery(BaseModel):
     query: str
     conversation_id: Optional[str] = None
+    document_id: Optional[str] = None
 
 class Citation(BaseModel):
     document_name: str

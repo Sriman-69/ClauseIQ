@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from app.api.routes import documents, chat, summary, checklist, risks, export, comparison
+from app.api.routes import documents, chat, summary, checklist, risks, export, comparison, metrics
 from app.core.config import settings
 from app.db.session import engine
 from app.models.document import Base
