@@ -8,3 +8,7 @@ class IVectorStore(ABC):
     @abstractmethod
     def search(self, query_embedding: list, k: int, user_id: str, document_id: str = None) -> list:
         pass
+
+    @abstractmethod
+    def delete_document_vectors(self, document_id: str) -> None:
+        pass

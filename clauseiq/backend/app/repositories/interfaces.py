@@ -42,6 +42,10 @@ class IChunkRepository(ABC):
     def get_chunks(self, document_id: str, user_id: str) -> List[Chunk]:
         pass
 
+    @abstractmethod
+    def delete_document_chunks(self, document_id: str, user_id: str) -> None:
+        pass
+
 class IClauseRepository(ABC):
     @abstractmethod
     def create_clause(self, clause: Clause, user_id: str) -> Clause:
@@ -72,6 +76,10 @@ class ISnapshotRepository(ABC):
     def delete_snapshot(self, snapshot_id: str, user_id: str) -> bool:
         pass
 
+    @abstractmethod
+    def delete_document_snapshots(self, document_id: str, user_id: str) -> None:
+        pass
+
 class IMetricsRepository(ABC):
     @abstractmethod
     def increment(self, action: str, user_id: str) -> Metrics:
@@ -92,6 +100,31 @@ class IActivityLogRepository(ABC):
 
     @abstractmethod
     def get_user_logs(self, user_id: str) -> List[ActivityLog]:
+        pass
+
+    @abstractmethod
+    def delete_document_logs(self, document_id: str, user_id: str) -> None:
+        pass
+
+    @abstractmethod
+    def get_recent_activities(self, user_id: str, limit: int = 20) -> List[dict]:
+        pass
+
+class IDashboardRepository(ABC):
+    @abstractmethod
+    def count_documents(self, user_id: str) -> int:
+        pass
+
+    @abstractmethod
+    def count_analyses(self, user_id: str) -> int:
+        pass
+
+    @abstractmethod
+    def count_chats(self, user_id: str) -> int:
+        pass
+
+    @abstractmethod
+    def count_comparisons(self, user_id: str) -> int:
         pass
 
 class IUserRepository(ABC):

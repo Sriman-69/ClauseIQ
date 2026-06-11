@@ -6,7 +6,7 @@ from app.schemas.analysis import RiskResponse
 from app.api.dependencies.auth import get_current_user
 from app.models.user import User
 from app.repositories.document_repository import DocumentRepository
-from app.repositories.activity_log_repository import ActivityLogRepository
+from app.services.activity_service import ActivityService
 
 router = APIRouter()
 
@@ -28,8 +28,8 @@ async def analyze_risks(
         result = await risk_service.analyze_risks(document_id, user_id=current_user.id)
         
         # Log the activity
-        activity_log_repo = ActivityLogRepository(db)
-        activity_log_repo.log_activity(user_id=current_user.id, action="risk_analysis", document_id=document_id)
+        activity_service = ActivityService(db)
+        await activity_service.log_activity(user_id=current_user.id, action="risk_analysis", document_id=document_id)
         
         return result
     except HTTPException:

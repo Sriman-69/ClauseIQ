@@ -74,7 +74,7 @@ const ChatView = ({ documentId }) => {
             </motion.div>
           ))}
           {loading && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="chat-message-wrapper ai">
+            <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="chat-message-wrapper ai">
                <div className="chat-bubble ai">
                  <div className="typing-indicator">
                     <div className="typing-dot"></div>

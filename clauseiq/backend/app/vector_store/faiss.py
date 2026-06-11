@@ -74,3 +74,32 @@ class FAISSVectorStore(IVectorStore):
         except (FileNotFoundError, RuntimeError):
             self.index = None
             self.metadata = []
+
+    def delete_document_vectors(self, document_id: str) -> None:
+        if self.index is None or self.index.ntotal == 0:
+            return
+            
+        remaining_vectors = []
+        remaining_metadata = []
+        d = self.index.d
+        
+        for i in range(self.index.ntotal):
+            meta = self.metadata[i]
+            if str(meta.get("document_id")) == str(document_id):
+                continue
+                
+            # Reconstruct the vector
+            vec = self.index.reconstruct(i)
+            remaining_vectors.append(vec)
+            remaining_metadata.append(meta)
+            
+        if len(remaining_vectors) > 0:
+            new_index = faiss.IndexFlatL2(d)
+            new_index.add(np.array(remaining_vectors, dtype=np.float32))
+            self.index = new_index
+            self.metadata = remaining_metadata
+        else:
+            self.index = None
+            self.metadata = []
+            
+        self.save()

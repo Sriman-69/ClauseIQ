@@ -18,6 +18,9 @@ ClauseIQ is an advanced, AI-powered document analysis and contract intelligence 
     *   *Metadata Scoping*: Restricts vectors strictly to the active `document_id` to prevent cross-document leakage.
     *   *Hybrid Reranking*: Re-scores chunks using a weighted combination of semantic similarity ($0.7$) and Jaccard token overlap ($0.3$) to prioritize exact keyword matches (e.g. key figures, dates, negations).
     *   *Context Synthesis*: Feeds the top 5 reranked results to Gemini for generation.
+*   **Workspace Portfolio Dashboard:** A centralized, multi-tenant workspace overview showing key performance indicators (total uploads, comparisons, chats, analyses), a recent activity audit feed, and quick-access documents.
+*   **Version History Switcher:** Seamless document lineage exploration. Switch between uploaded versions of a document family via a topological dropdown list directly on the document details workspace.
+*   **Cascading Document Deletion:** Safe, multi-stage document purging. Safely deletes physical files, database records (chunks, snapshots, logs), and executes offline FAISS index rebuilding.
 *   **Premium Glassmorphism UI:** Responsive dashboard design utilizing a modern glassmorphism aesthetic built using **React**, **GSAP**, **Anime.js**, and **Framer Motion**.
 *   **Cost Optimization & Offline Resilience:** 
     *   **Persistent Caching:** Responses are snapshotted in SQLite; repeated analysis costs $0 and runs instantly.
@@ -40,6 +43,10 @@ ClauseIQ is an advanced, AI-powered document analysis and contract intelligence 
 ### 3. Accurate Contract Version Comparison
 *   **Challenge:** Embedding similarity often misses legally significant changes involving numbers, dates, or negations.
 *   **Solution:** Implemented a RapidFuzz-powered comparison engine with semantic impact analysis triggered only for modified clauses, reducing API costs while improving precision.
+
+### 4. Zero-API Offline Vector Index Rebuilding
+*   **Challenge:** Deleting a document requires removing its vectors from the FAISS index. Doing this online via AI re-embedding is slow and expensive.
+*   **Solution:** Built an offline vector reconstruction engine. It retrieves all existing vectors from the flat index using `reconstruct(i)`, filters out chunks matching the deleted `document_id`, and rebuilds the flat L2 index (`faiss.IndexFlatL2`) using raw NumPy array manipulation, completely avoiding external AI API calls.
 
 ---
 
@@ -103,8 +110,6 @@ To support secure SaaS operations, ClauseIQ implements strict tenant isolation a
 
 5. **Dynamic Schema Migration (SQLite):**
    * On startup, the backend automatically inspects the SQLite database. If an outdated single-tenant schema is detected (e.g. missing `user_id` column), it automatically wipes the database and resets FAISS index files to maintain environment integrity.
-
----
 
 ---
 
@@ -198,13 +203,13 @@ npm run dev
 clauseiq/
 ├── backend/
 │   ├── app/
-│   │   ├── api/routes/         # FastAPI Route Controllers (chat, documents, export, comparison, checklist, etc.)
+│   │   ├── api/routes/         # FastAPI Route Controllers (chat, documents, dashboard, activity, metrics, export, etc.)
 │   │   ├── core/               # Configuration and Exception handling
 │   │   ├── db/                 # SQLite Session configurations
-│   │   ├── models/             # SQLAlchemy schemas (Document, Chunk, Clause, AnalysisSnapshot, Metrics)
-│   │   ├── repositories/       # Abstraction Layer (Document, Chunk, Clause, Snapshot, Metrics Repositories & Interfaces)
+│   │   ├── models/             # SQLAlchemy schemas (Document, Chunk, Clause, AnalysisSnapshot, Metrics, ActivityLog)
+│   │   ├── repositories/       # Abstraction Layer (Document, Chunk, Clause, Snapshot, Metrics, Dashboard, ActivityLog Repositories)
 │   │   ├── schemas/            # Pydantic validation schemas
-│   │   ├── services/           # Core Business Logic (AI, RAG, Comparison, Exports)
+│   │   ├── services/           # Core Business Logic (AI, RAG, Comparison, Exports, Dashboard, Deletion, Activity)
 │   │   ├── storage/            # File Storage Provider Abstraction (LocalStorageProvider & IStorageProvider)
 │   │   └── vector_store/       # Vector Database Abstraction (FAISSVectorStore & IVectorStore)
 │   ├── exports/                # Generated PDF and DOCX reports
@@ -212,10 +217,14 @@ clauseiq/
 │   └── uploads/                # Local PDF Storage Storage Directory
 └── frontend/
     ├── src/
-    │   ├── components/         # React Views & Components (Dashboard, Observability, ComparisonView, UI elements)
-    │   ├── App.jsx             # Main Application Container & Route Transitions
-    │   └── index.css           # Global Styles & Theme Design Tokens
-    └── package.json
+        ├── components/         # React Components (layout/, views/, ui/)
+        │   ├── layout/         # Persistent App Shell (Sidebar, DashboardLayout)
+        │   ├── views/          # Routed workspaces (WorkspaceDashboard, MyDocuments, DocumentDetails, UploadScreen, AnalyticsPage, ProfilePage, ChatView)
+        │   └── ui/             # Reusable UI tokens (Button, Tabs, etc.)
+        ├── App.jsx             # Main Application Container & Route Transitions
+        ├── index.css           # Global Design Tokens & Theme Variables
+        ├── main.jsx            # Application React mount entrypoint
+        └── styles/             # Application resets & layout styles
 ```
 
 ---

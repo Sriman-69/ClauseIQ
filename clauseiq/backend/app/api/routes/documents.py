@@ -5,9 +5,10 @@ from typing import List
 from app.db.session import get_db
 from app.schemas.document import Document, DocumentCreate, ClauseResponse
 from app.services.document_service import DocumentService
+from app.services.document_deletion_service import DocumentDeletionService
 from app.api.dependencies.auth import get_current_user
 from app.models.user import User
-from app.repositories.activity_log_repository import ActivityLogRepository
+from app.services.activity_service import ActivityService
 
 router = APIRouter()
 
@@ -28,8 +29,8 @@ async def upload_document(
         document = await document_service.create_document(file=file, user_id=current_user.id)
         
         # Log the activity
-        activity_log_repo = ActivityLogRepository(db)
-        activity_log_repo.log_activity(user_id=current_user.id, action="upload", document_id=document.id)
+        activity_service = ActivityService(db)
+        await activity_service.log_activity(user_id=current_user.id, action="upload", document_id=document.id)
         
         return document
     except HTTPException:
@@ -64,8 +65,8 @@ async def upload_new_version(
         document = await document_service.create_document(file=file, user_id=current_user.id, parent_document_id=document_id)
         
         # Log the activity
-        activity_log_repo = ActivityLogRepository(db)
-        activity_log_repo.log_activity(user_id=current_user.id, action="upload", document_id=document.id)
+        activity_service = ActivityService(db)
+        await activity_service.log_activity(user_id=current_user.id, action="upload", document_id=document.id)
         
         return document
     except ValueError as e:
@@ -130,3 +131,43 @@ async def get_document_clauses(
 
     clauses = await document_service.get_clauses(document_id=document_id, user_id=current_user.id)
     return clauses
+
+@router.delete("/documents/{document_id}")
+async def delete_document(
+    document_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Delete a document and all related data/vectors safely.
+    """
+    deletion_service = DocumentDeletionService(db)
+    success = await deletion_service.delete_document(document_id=document_id, user_id=current_user.id)
+    if not success:
+        raise HTTPException(status_code=500, detail="Failed to delete document")
+        
+    # Log activity
+    activity_service = ActivityService(db)
+    await activity_service.log_activity(user_id=current_user.id, action="delete", document_id=document_id)
+    
+    return {"success": True}
+
+@router.get("/documents/{document_id}/versions", response_model=List[Document])
+async def get_document_versions(
+    document_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get all versions of a document family.
+    """
+    document_service = DocumentService(db)
+    # Check document existence and ownership first
+    doc = document_service.document_repo.get_by_id(document_id, user_id=None)
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+    if doc.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Forbidden: You do not own this document")
+        
+    versions = document_service.document_repo.get_versions(document_id, user_id=current_user.id)
+    return versions

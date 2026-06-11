@@ -26,14 +26,13 @@ const LandingPage = ({ onEnterApp }) => {
   const gridRef = useRef(null);
   const backgroundRef = useRef(null);
 
+
+
   // GSAP Animations
   useEffect(() => {
     const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
 
-    tl.to(heroRef.current, { y: 0, opacity: 1, duration: 1, delay: 0.2 })
-      .to(subRef.current, { y: 0, opacity: 1, duration: 1 }, "-=0.7")
-      .to(dropzoneRef.current, { y: 0, opacity: 1, duration: 0.8 }, "-=0.6")
-      .to(gridRef.current, { opacity: 1, duration: 1 }, "-=0.4");
+    tl.to(gridRef.current, { opacity: 1, duration: 1, delay: 0.2 });
   }, []);
 
   // GSAP Background Particles
@@ -42,30 +41,47 @@ const LandingPage = ({ onEnterApp }) => {
     if (!wrapper) return;
 
     const dots = [];
-    const numDots = 50;
+    const numDots = 40;
     
     for (let i = 0; i < numDots; i++) {
       const dot = document.createElement('div');
       dot.style.position = 'absolute';
-      dot.style.width = Math.random() * 3 + 1 + 'px';
-      dot.style.height = dot.style.width;
-      dot.style.background = 'rgba(99, 102, 241, 0.4)';
+      
+      const size = Math.random() * 2 + 0.5;
+      dot.style.width = size + 'px';
+      dot.style.height = size + 'px';
+      
+      // Premium muted colors: soft white, muted indigo/blue, dark purple
+      const colors = [
+        'rgba(255, 255, 255, 0.25)', 
+        'rgba(129, 140, 248, 0.18)', 
+        'rgba(99, 102, 241, 0.12)',
+        'rgba(168, 85, 247, 0.1)'
+      ];
+      dot.style.background = colors[Math.floor(Math.random() * colors.length)];
       dot.style.borderRadius = '50%';
+      
+      // Depth of field blur for ambient bokeh effect
+      if (size > 1.8) {
+        dot.style.filter = 'blur(1px)';
+      }
+      
       dot.style.top = Math.random() * 100 + 'vh';
       dot.style.left = Math.random() * 100 + 'vw';
       wrapper.appendChild(dot);
       dots.push(dot);
 
+      // Float gently with very slow, organic movement
       gsap.to(dot, {
-        y: `+=${Math.random() * 200 - 100}`,
-        x: `+=${Math.random() * 200 - 100}`,
-        scale: Math.random() * 1.5 + 0.5,
-        opacity: Math.random() * 0.7 + 0.1,
-        duration: Math.random() * 5 + 3,
+        y: `+=${Math.random() * 120 - 60}`,
+        x: `+=${Math.random() * 120 - 60}`,
+        scale: Math.random() * 1.3 + 0.7,
+        opacity: Math.random() * 0.5 + 0.05,
+        duration: Math.random() * 12 + 8,
         repeat: -1,
         yoyo: true,
         ease: 'sine.inOut',
-        delay: Math.random() * -5
+        delay: Math.random() * -12
       });
     }
 
@@ -73,6 +89,8 @@ const LandingPage = ({ onEnterApp }) => {
       dots.forEach(d => d.remove());
     };
   }, []);
+
+
 
   const handleDrag = (e) => {
     e.preventDefault();
@@ -360,7 +378,8 @@ const LandingPage = ({ onEnterApp }) => {
 
       <div className="landing-content">
         <h1 className="hero-title" ref={heroRef}>
-          Contract Intelligence, <br /> Redefined.
+          <span className="hero-line">Contract Intelligence,</span>
+          <span className="hero-line text-gradient">Redefined.</span>
         </h1>
         <p className="hero-subtitle" ref={subRef}>
           Upload an NDA, MSA, or complex agreement and instantly extract risks, compliance checklists, and semantic summaries powered by Gemini 2.5 Flash.
@@ -503,27 +522,62 @@ const LandingPage = ({ onEnterApp }) => {
         </div>
 
 
-        <div className="feature-grid" ref={gridRef}>
-          <div className="feature-card">
-            <div className="feature-icon-wrapper">
-              <Zap size={24} />
-            </div>
-            <h3 className="feature-title">Zero-Cost Caching</h3>
-            <p className="feature-desc">Analyzed documents are intelligently snapshotted. Repeated queries cost $0 and load instantly without invoking Gemini.</p>
+        <div className="pipeline-container" ref={gridRef}>
+          <div className="pipeline-header-area">
+            <span className="pipeline-tag">PLATFORM WORKFLOW</span>
+            <h2 className="pipeline-main-title">The Contract Intelligence Suite</h2>
+            <p className="pipeline-subtitle">Four powerful user workspaces to analyze, audit, and compare your legal agreements.</p>
           </div>
-          <div className="feature-card">
-            <div className="feature-icon-wrapper">
-              <Search size={24} />
+          
+          <div className="pipeline-steps-wrapper">
+            {/* Connecting laser path line */}
+            <div className="pipeline-connecting-line">
+              <div className="pipeline-glowing-pulse"></div>
             </div>
-            <h3 className="feature-title">Hybrid Reranking</h3>
-            <p className="feature-desc">Perplexity-style RAG Chat utilizing FAISS and BM25 heuristic reranking to find the perfect citation every time.</p>
-          </div>
-          <div className="feature-card">
-            <div className="feature-icon-wrapper">
-              <ShieldCheck size={24} />
+
+            <div className="pipeline-step-card">
+              <div className="step-number-glow">01</div>
+              <div className="pipeline-step-icon">
+                <UploadCloud size={20} />
+              </div>
+              <div className="pipeline-step-info">
+                <h4 className="pipeline-step-title">Secure Uploads</h4>
+                <p className="pipeline-step-desc">Upload PDF agreements securely. Your files and vector indexes are isolated per user.</p>
+              </div>
             </div>
-            <h3 className="feature-title">Offline Resilience</h3>
-            <p className="feature-desc">If API limits are exceeded, ClauseIQ gracefully falls back to rigorous regex and semantic heuristic parsers.</p>
+
+            <div className="pipeline-step-card">
+              <div className="step-number-glow">02</div>
+              <div className="pipeline-step-icon">
+                <Zap size={20} />
+              </div>
+              <div className="pipeline-step-info">
+                <h4 className="pipeline-step-title">Executive Summaries</h4>
+                <p className="pipeline-step-desc">Understand agreements instantly with AI-generated obligation highlights and checklists.</p>
+              </div>
+            </div>
+
+            <div className="pipeline-step-card">
+              <div className="step-number-glow">03</div>
+              <div className="pipeline-step-icon">
+                <Search size={20} />
+              </div>
+              <div className="pipeline-step-info">
+                <h4 className="pipeline-step-title">Risk Identification</h4>
+                <p className="pipeline-step-desc">Automatically detect legal risks categorized by severity with citations to source pages.</p>
+              </div>
+            </div>
+
+            <div className="pipeline-step-card">
+              <div className="step-number-glow">04</div>
+              <div className="pipeline-step-icon">
+                <ShieldCheck size={20} />
+              </div>
+              <div className="pipeline-step-info">
+                <h4 className="pipeline-step-title">Version Comparison</h4>
+                <p className="pipeline-step-desc">Run side-by-side differentials to isolate added, deleted, or modified clauses across versions.</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>

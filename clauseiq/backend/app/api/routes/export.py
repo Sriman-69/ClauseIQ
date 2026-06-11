@@ -9,7 +9,7 @@ from app.schemas.analysis import ExportResponse
 from app.api.dependencies.auth import get_current_user
 from app.models.user import User
 from app.repositories.document_repository import DocumentRepository
-from app.repositories.activity_log_repository import ActivityLogRepository
+from app.services.activity_service import ActivityService
 
 router = APIRouter()
 
@@ -32,8 +32,8 @@ async def generate_export(
         result = await export_service.export_report(document_id, user_id=current_user.id, export_format=format)
         
         # Log the activity
-        activity_log_repo = ActivityLogRepository(db)
-        activity_log_repo.log_activity(user_id=current_user.id, action="export", document_id=document_id)
+        activity_service = ActivityService(db)
+        await activity_service.log_activity(user_id=current_user.id, action="export", document_id=document_id)
         
         return result
     except HTTPException:

@@ -7,7 +7,7 @@ from app.schemas.analysis import ChecklistItem
 from app.api.dependencies.auth import get_current_user
 from app.models.user import User
 from app.repositories.document_repository import DocumentRepository
-from app.repositories.activity_log_repository import ActivityLogRepository
+from app.services.activity_service import ActivityService
 
 router = APIRouter()
 
@@ -29,8 +29,8 @@ async def generate_checklist(
         result = await checklist_service.generate_checklist(document_id, user_id=current_user.id)
         
         # Log the activity
-        activity_log_repo = ActivityLogRepository(db)
-        activity_log_repo.log_activity(user_id=current_user.id, action="checklist", document_id=document_id)
+        activity_service = ActivityService(db)
+        await activity_service.log_activity(user_id=current_user.id, action="checklist", document_id=document_id)
         
         return result
     except HTTPException:

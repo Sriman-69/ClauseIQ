@@ -1,45 +1,65 @@
 import React, { useState } from 'react';
 import DashboardLayout from './components/layout/DashboardLayout';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from './components/ui/Tabs';
 import LandingPage from './components/views/LandingPage';
-import Overview from './components/views/Overview';
-import SummaryView from './components/views/SummaryView';
-import ChecklistView from './components/views/ChecklistView';
-import RiskAnalysisView from './components/views/RiskAnalysisView';
-import ChatView from './components/views/ChatView';
-import ClauseExplorer from './components/views/ClauseExplorer';
 import ComparisonView from './components/views/ComparisonView';
-import ObservabilityDashboard from './components/views/ObservabilityDashboard';
-import ExportModal from './components/views/ExportModal';
 import MyDocuments from './components/views/MyDocuments';
+import WorkspaceDashboard from './components/views/WorkspaceDashboard';
+import AnalyticsPage from './components/views/AnalyticsPage';
+import ProfilePage from './components/views/ProfilePage';
+import UploadScreen from './components/views/UploadScreen';
+import DocumentDetails from './components/views/DocumentDetails';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import ProtectedRoute from './components/ProtectedRoute';
 import { FileText, ArrowRight } from 'lucide-react';
 
 function AppContent() {
   const { isAuthenticated } = useAuth();
   const [document, setDocument] = useState(null);
-  const [activeRoute, setActiveRoute] = useState('documents'); // default to documents/upload
+  const [activeRoute, setActiveRoute] = useState('dashboard');
   const [hasEnteredApp, setHasEnteredApp] = useState(false);
 
   React.useEffect(() => {
-    if (!isAuthenticated) {
+    if (isAuthenticated) {
+      setHasEnteredApp(true);
+    } else {
       setHasEnteredApp(false);
       setDocument(null);
+      setActiveRoute('dashboard');
     }
   }, [isAuthenticated]);
 
-  const handleUploadSuccess = (doc) => {
+  const handleSelectDocument = (doc) => {
     setDocument(doc);
-    setActiveRoute(doc ? 'dashboard' : 'documents');
-    setHasEnteredApp(true);
+    if (doc) {
+      setActiveRoute('document-details');
+    } else {
+      setActiveRoute('documents');
+    }
   };
 
   const renderContent = () => {
-    if (activeRoute === 'metrics') return <ObservabilityDashboard />;
-    if (activeRoute === 'documents') return <MyDocuments onSelectDocument={handleUploadSuccess} />;
+    if (activeRoute === 'dashboard') {
+      return (
+        <WorkspaceDashboard 
+          setActiveRoute={setActiveRoute} 
+          onSelectDocument={handleSelectDocument} 
+        />
+      );
+    }
+    if (activeRoute === 'documents') {
+      return <MyDocuments onSelectDocument={handleSelectDocument} />;
+    }
+    if (activeRoute === 'upload') {
+      return <UploadScreen onUploadSuccess={handleSelectDocument} />;
+    }
+    if (activeRoute === 'analytics') {
+      return <AnalyticsPage />;
+    }
+    if (activeRoute === 'profile') {
+      return <ProfilePage />;
+    }
 
+    // Guard document-dependent views (compare, document-details)
     if (!document) {
       return (
         <div style={{
@@ -60,7 +80,7 @@ function AppContent() {
           <div>
             <h2 style={{ fontSize: '1.35rem', fontWeight: 600 }}>No Active Document Selected</h2>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.5rem', maxWidth: '400px' }}>
-              Please select an existing document from your repository or upload a new one to begin your analysis.
+              Please select an existing document from your repository or upload a new one to begin.
             </p>
           </div>
           <button 
@@ -86,44 +106,28 @@ function AppContent() {
       );
     }
 
-    switch (activeRoute) {
-      case 'dashboard':
-        return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-            <Overview document={document} />
-            <Tabs defaultValue="summary" onValueChange={() => {}}>
-              <TabsList>
-                <TabsTrigger value="summary">Executive Summary</TabsTrigger>
-                <TabsTrigger value="checklist">Compliance Checklist</TabsTrigger>
-                <TabsTrigger value="risks">Risk Profile</TabsTrigger>
-                <TabsTrigger value="chat">RAG Chat</TabsTrigger>
-                <TabsTrigger value="clauses">Clause Explorer</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="summary"><SummaryView documentId={document.id} /></TabsContent>
-              <TabsContent value="checklist"><ChecklistView documentId={document.id} /></TabsContent>
-              <TabsContent value="risks"><RiskAnalysisView documentId={document.id} /></TabsContent>
-              <TabsContent value="chat"><ChatView documentId={document.id} /></TabsContent>
-              <TabsContent value="clauses"><ClauseExplorer documentId={document.id} /></TabsContent>
-            </Tabs>
-          </div>
-        );
-      case 'comparison':
-        return <ComparisonView documentId={document.id} />;
-      case 'exports':
-        return <ExportModal documentId={document.id} />;
-      default:
-        return <div>Route not found</div>;
+    if (activeRoute === 'compare') {
+      return <ComparisonView documentId={document.id} />;
     }
+
+    if (activeRoute === 'document-details') {
+      return (
+        <DocumentDetails 
+          document={document} 
+          onSelectDocument={handleSelectDocument} 
+          setActiveRoute={setActiveRoute}
+        />
+      );
+    }
+
+    return <div>Route not found</div>;
   };
-
-
 
   return (
     <AnimatePresence mode="wait">
       {!hasEnteredApp ? (
         <motion.div key="landing" style={{ width: '100%', minHeight: '100vh' }} exit={{ opacity: 0, y: -50, scale: 0.98 }} transition={{ duration: 0.5, ease: 'easeInOut' }}>
-          <LandingPage onEnterApp={handleUploadSuccess} />
+          <LandingPage onEnterApp={handleSelectDocument} />
         </motion.div>
       ) : (
         <motion.div key="dashboard" style={{ width: '100%', height: '100vh' }} initial={{ opacity: 0, scale: 1.02 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5, ease: 'easeOut' }}>

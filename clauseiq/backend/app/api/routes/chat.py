@@ -6,7 +6,7 @@ from app.services.chat_service import ChatService
 from app.api.dependencies.auth import get_current_user
 from app.models.user import User
 from app.repositories.document_repository import DocumentRepository
-from app.repositories.activity_log_repository import ActivityLogRepository
+from app.services.activity_service import ActivityService
 
 router = APIRouter()
 
@@ -37,8 +37,8 @@ async def chat(
         )
         
         # Log the activity
-        activity_log_repo = ActivityLogRepository(db)
-        activity_log_repo.log_activity(user_id=current_user.id, action="chat", document_id=query.document_id)
+        activity_service = ActivityService(db)
+        await activity_service.log_activity(user_id=current_user.id, action="chat", document_id=query.document_id)
         
         return response
     except HTTPException:

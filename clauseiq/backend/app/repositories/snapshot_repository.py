@@ -38,3 +38,10 @@ class SnapshotRepository(BaseRepository, ISnapshotRepository):
             self.db.commit()
             return True
         return False
+
+    def delete_document_snapshots(self, document_id: str, user_id: str) -> None:
+        self.db.query(AnalysisSnapshot).filter(
+            AnalysisSnapshot.document_id == document_id,
+            AnalysisSnapshot.user_id == user_id
+        ).delete(synchronize_session=False)
+        self.db.commit()

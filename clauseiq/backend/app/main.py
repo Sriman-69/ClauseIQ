@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from app.api.routes import documents, chat, summary, checklist, risks, export, comparison, metrics, auth, search
+from app.api.routes import documents, chat, summary, checklist, risks, export, comparison, metrics, auth, search, dashboard, activity
 from app.core.config import settings
 from app.db.session import engine
 from app.models.document import Base
@@ -74,6 +74,8 @@ app.include_router(export.router, prefix="/api/v1", tags=["export"])
 app.include_router(comparison.router, prefix="/api/v1", tags=["comparison"])
 app.include_router(metrics.router, prefix="/api/v1/metrics", tags=["metrics"])
 app.include_router(search.router, prefix="/api/v1", tags=["search"])
+app.include_router(dashboard.router, prefix="/api/v1", tags=["dashboard"])
+app.include_router(activity.router, prefix="/api/v1", tags=["activity"])
 
 @app.get("/")
 async def root():

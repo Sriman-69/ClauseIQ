@@ -10,7 +10,7 @@ from app.repositories.document_repository import DocumentRepository
 from app.repositories.snapshot_repository import SnapshotRepository
 from app.api.dependencies.auth import get_current_user
 from app.models.user import User
-from app.repositories.activity_log_repository import ActivityLogRepository
+from app.services.activity_service import ActivityService
 
 router = APIRouter()
 export_service = ComparisonExportService()
@@ -76,8 +76,8 @@ async def compare_documents(
         snapshot_repo.create_snapshot(cache_entry, user_id=current_user.id)
         
         # Log the activity
-        activity_log_repo = ActivityLogRepository(db)
-        activity_log_repo.log_activity(user_id=current_user.id, action="comparison", document_id=request.doc_b_id)
+        activity_service = ActivityService(db)
+        await activity_service.log_activity(user_id=current_user.id, action="comparison", document_id=request.doc_b_id)
 
         return final_response
     except HTTPException:
@@ -135,8 +135,8 @@ async def export_comparison(
         download = await export_service.export_comparison_report(doc_a.filename, doc_b.filename, result['comparison_result'])
         
         # Log the activity
-        activity_log_repo = ActivityLogRepository(db)
-        activity_log_repo.log_activity(user_id=current_user.id, action="comparison", document_id=request.doc_b_id)
+        activity_service = ActivityService(db)
+        await activity_service.log_activity(user_id=current_user.id, action="comparison", document_id=request.doc_b_id)
 
         return download
     except HTTPException:

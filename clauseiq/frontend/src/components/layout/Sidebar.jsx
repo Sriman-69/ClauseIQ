@@ -1,5 +1,5 @@
 import React from 'react';
-import { FileText, LayoutDashboard, SplitSquareHorizontal, Download, Activity, Settings, ChevronLeft, ChevronRight, Scale, LogOut, User as UserIcon } from 'lucide-react';
+import { FileText, LayoutDashboard, SplitSquareHorizontal, Download, Activity, Settings, ChevronLeft, ChevronRight, Scale, LogOut, User as UserIcon, UploadCloud } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useAuth } from '../../context/AuthContext';
 import logoImg from '../../assets/logo.png';
@@ -10,11 +10,11 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, activeRoute, setActiveRoute }) =
   
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'documents', label: 'Documents', icon: FileText },
-    { id: 'comparison', label: 'Comparison', icon: SplitSquareHorizontal },
-    { id: 'exports', label: 'Exports', icon: Download },
-    { id: 'metrics', label: 'System Metrics', icon: Activity },
-    { id: 'settings', label: 'Settings', icon: Settings },
+    { id: 'documents', label: 'My Documents', icon: FileText },
+    { id: 'upload', label: 'Upload', icon: UploadCloud },
+    { id: 'compare', label: 'Compare', icon: SplitSquareHorizontal },
+    { id: 'analytics', label: 'Analytics', icon: Activity },
+    { id: 'profile', label: 'Profile', icon: UserIcon },
   ];
 
   return (

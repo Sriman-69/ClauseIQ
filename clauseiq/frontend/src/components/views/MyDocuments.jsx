@@ -25,9 +25,29 @@ const MyDocuments = ({ onSelectDocument }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [versionTarget, setVersionTarget] = useState(null); // Document to upload a version for
+  const [activeDropdown, setActiveDropdown] = useState(null);
   
   const fileInputRef = useRef(null);
   const versionFileInputRef = useRef(null);
+
+  useEffect(() => {
+    const handleOutsideClick = () => setActiveDropdown(null);
+    window.addEventListener('click', handleOutsideClick);
+    return () => window.removeEventListener('click', handleOutsideClick);
+  }, []);
+
+  const handleDeleteDocument = async (docId) => {
+    if (!window.confirm("Are you sure you want to permanently delete this document, its version history, analysis snapshots, and FAISS vectors?")) {
+      return;
+    }
+    try {
+      await axios.delete(`http://localhost:8000/api/v1/documents/${docId}`);
+      fetchDocuments();
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.detail || "Failed to delete document.");
+    }
+  };
 
   const fetchDocuments = async () => {
     try {
@@ -355,7 +375,7 @@ const MyDocuments = ({ onSelectDocument }) => {
                   <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)', color: 'var(--text-muted)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                     <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Filename</th>
                     <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Version</th>
-                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Uploaded At</th>
+                    <th style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>Upload Date</th>
                     <th style={{ padding: '0.75rem 1rem', fontWeight: 600, textAlign: 'right' }}>Actions</th>
                   </tr>
                 </thead>
@@ -406,8 +426,9 @@ const MyDocuments = ({ onSelectDocument }) => {
                           {formatDate(doc.upload_timestamp)}
                         </div>
                       </td>
-                      <td style={{ padding: '1rem', textAlign: 'right' }}>
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+                      <td style={{ padding: '1rem', textAlign: 'right', position: 'relative' }}>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', alignItems: 'center' }}>
+                          
                           <button
                             onClick={() => {
                               setVersionTarget(doc);
@@ -417,14 +438,14 @@ const MyDocuments = ({ onSelectDocument }) => {
                               background: 'transparent',
                               border: '1px solid rgba(255, 255, 255, 0.06)',
                               color: 'var(--text-secondary)',
-                              padding: '0.4rem 0.8rem',
+                              padding: '0.35rem 0.65rem',
                               borderRadius: 'var(--radius-md)',
-                              fontSize: '0.775rem',
+                              fontSize: '0.75rem',
                               fontWeight: 500,
                               cursor: 'pointer',
                               display: 'flex',
                               alignItems: 'center',
-                              gap: '0.35rem',
+                              gap: '0.3rem',
                               transition: 'all 0.15s'
                             }}
                             onMouseOver={(e) => {
@@ -436,24 +457,24 @@ const MyDocuments = ({ onSelectDocument }) => {
                               e.currentTarget.style.color = 'var(--text-secondary)';
                             }}
                           >
-                            <History size={13} />
-                            New Version
+                            <History size={11} />
+                            + Version
                           </button>
-                          
+
                           <button
                             onClick={() => onSelectDocument(doc)}
                             style={{
                               background: 'rgba(99, 102, 241, 0.12)',
                               border: '1px solid rgba(99, 102, 241, 0.25)',
                               color: '#a5b4fc',
-                              padding: '0.4rem 0.8rem',
+                              padding: '0.35rem 0.65rem',
                               borderRadius: 'var(--radius-md)',
-                              fontSize: '0.775rem',
+                              fontSize: '0.75rem',
                               fontWeight: 600,
                               cursor: 'pointer',
                               display: 'flex',
                               alignItems: 'center',
-                              gap: '0.35rem',
+                              gap: '0.3rem',
                               transition: 'all 0.15s'
                             }}
                             onMouseOver={(e) => {
@@ -467,9 +488,39 @@ const MyDocuments = ({ onSelectDocument }) => {
                               e.currentTarget.style.borderColor = 'rgba(99, 102, 241, 0.25)';
                             }}
                           >
-                            Analyze
-                            <ArrowRight size={13} />
+                            Open
                           </button>
+
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteDocument(doc.id);
+                            }}
+                            style={{
+                              background: 'rgba(239, 68, 68, 0.12)',
+                              border: '1px solid rgba(239, 68, 68, 0.25)',
+                              color: '#f87171',
+                              padding: '0.35rem 0.65rem',
+                              borderRadius: 'var(--radius-md)',
+                              fontSize: '0.75rem',
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                              transition: 'all 0.15s'
+                            }}
+                            onMouseOver={(e) => {
+                              e.currentTarget.style.background = '#ef4444';
+                              e.currentTarget.style.color = '#fff';
+                              e.currentTarget.style.borderColor = '#ef4444';
+                            }}
+                            onMouseOut={(e) => {
+                              e.currentTarget.style.background = 'rgba(239, 68, 68, 0.12)';
+                              e.currentTarget.style.color = '#f87171';
+                              e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.25)';
+                            }}
+                          >
+                            Delete
+                          </button>
+
                         </div>
                       </td>
                     </tr>
