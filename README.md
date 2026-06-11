@@ -65,6 +65,8 @@ graph TD;
     subgraph "Routing & Isolated Services"
         API -->|tenant context: user_id| Services[Business Services]
         Services --> AIService[AI Gateway]
+        Services --> DeletionService[Deletion Service]
+        Services --> ActivityService[Activity Service]
     end
 
     subgraph "Abstraction Interfaces"
@@ -75,7 +77,7 @@ graph TD;
 
     subgraph "Physical Data Layer (Tenant Partitioned)"
         Storage --> Disk[(Local disk / uploads/)]
-        Vectors --> FAISSIndex["faiss_index.bin"]
+        Vectors -->|Zero-API Offline Reconstruction| FAISSIndex["faiss_index.bin"]
         Repos --> SQLiteDB[(SQLite / test.db)]
     end
 
