@@ -403,7 +403,7 @@ const MyDocuments = ({ onSelectDocument }) => {
                       <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem' }}>
                           <Calendar size={13} style={{ color: 'var(--text-muted)' }} />
-                          {formatDate(doc.created_at)}
+                          {formatDate(doc.upload_timestamp)}
                         </div>
                       </td>
                       <td style={{ padding: '1rem', textAlign: 'right' }}>

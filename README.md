@@ -43,26 +43,30 @@ ClauseIQ is an advanced, AI-powered document analysis and contract intelligence 
 
 ---
 
-## 🏗️ System Architecture
+## 🏗️ System Architecture & Tenant Isolation
 
-ClauseIQ follows a highly decoupled, abstraction-centric architecture designed for database and storage engine independence:
+ClauseIQ follows a highly decoupled, abstraction-centric architecture designed for multi-tenant data isolation, database independence, and storage engine independence:
 
 ```mermaid
 graph TD;
-    Client[React Frontend] -->|REST API| API[FastAPI Backend]
+    Client[React Frontend] -->|JWT Auth Header| API[FastAPI Router / get_current_user]
     
-    subgraph Routing & Services
-        API --> Services[Business Services]
+    subgraph Authentication & Authorization
+        API -->|JWT Validation| AuthContext[Auth Service]
+    end
+
+    subgraph Routing & Isolated Services
+        API -->|tenant context: user_id| Services[Business Services]
         Services --> AIService[AI Gateway]
     end
 
     subgraph Abstraction Interfaces
         Services -->|IStorageProvider| Storage[LocalStorageProvider]
-        Services -->|IVectorStore| Vectors[FAISSVectorStore]
-        Services -->|DB Repositories| Repos[SQL Repositories]
+        Services -->|IVectorStore + user_id| Vectors[FAISSVectorStore]
+        Services -->|DB Repositories + user_id| Repos[SQL Repositories]
     end
 
-    subgraph Physical Data Layer
+    subgraph Physical Data Layer (Tenant Partitioned)
         Storage --> Disk[(Local disk / uploads/)]
         Vectors --> FAISSIndex[(faiss_index.bin)]
         Repos --> SQLiteDB[(SQLite / test.db)]
@@ -75,6 +79,32 @@ graph TD;
     %% Fallback Logic
     AIService -.->|Quota Exceeded| Fallbacks[Offline Heuristics & Regex]
 ```
+
+---
+
+## 🔒 Multi-Tenant Data Isolation & Security Architecture
+
+To support secure SaaS operations, ClauseIQ implements strict tenant isolation at every level of the request lifecycle:
+
+1. **Authentication & Route Protection:**
+   * Every business route is protected via FastAPI's dependency injection (`Depends(get_current_user)`).
+   * JWT access and refresh tokens secure API endpoints. User identity is validated, generating a scoped tenant context (`user_id`).
+
+2. **Database Scoping (SQLite):**
+   * High-level schema tables (`Document`, `Chunk`, `Clause`, `AnalysisSnapshot`, `Metrics`, `ActivityLog`) are mapped with a `user_id` foreign key.
+   * Repositories ([repositories/](file:///d:/P1/clauseiq/backend/app/repositories/)) strictly query data filtering by the caller's `user_id`. Any attempt to retrieve or mutate records of another user results in a `403 Forbidden` response.
+
+3. **Secure Vector Store Isolation (FAISS):**
+   * To prevent cross-tenant vector index leakage, the in-memory `FAISSVectorStore` filters matching results post-query. 
+   * It enforces that retrieved document chunks must match both the active `document_id` and the request owner's `user_id`.
+
+4. **Activity & Audit Logging:**
+   * Every major tenant operation (document uploads, summary generation, checklist runs, chat queries, exports, and version comparisons) creates an audit trail entry in the `ActivityLog` database table.
+
+5. **Dynamic Schema Migration (SQLite):**
+   * On startup, the backend automatically inspects the SQLite database. If an outdated single-tenant schema is detected (e.g. missing `user_id` column), it automatically wipes the database and resets FAISS index files to maintain environment integrity.
+
+---
 
 ---
 
@@ -119,10 +149,18 @@ cd backend
 pip install -r requirements.txt
 ```
 
-Create a `.env` file in the `backend/` directory:
+Create a `.env` file in the `backend/` directory by copying `.env.example`:
 ```env
+# Google Gemini API Key
 GEMINI_API_KEY=your_gemini_api_key_here
-PROJECT_NAME="ClauseIQ"
+
+# JWT Configuration
+JWT_SECRET_KEY=replace_this_with_a_long_random_secret_key
+JWT_ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=60
+
+# Database
+DATABASE_URL=sqlite:///./test.db
 ```
 
 ### 3. Frontend Setup
