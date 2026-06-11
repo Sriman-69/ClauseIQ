@@ -11,8 +11,14 @@ ClauseIQ is an advanced, AI-powered document analysis and contract intelligence 
     *   **Summarization:** Generates structured executive summaries and extracts key obligations.
     *   **Compliance Checklists:** Automatically evaluates documents against standard business requirements (e.g., NDA, Indemnification).
     *   **Risk Analysis:** Flags High, Medium, and Low risks with citations back to the source text.
+*   **Clause Explorer:** Browse all extracted clauses of a contract grouped, identified, and mapped back to their source page numbers using an overlap matching heuristic.
 *   **Document Versioning & Comparison Engine:** Upload a newer version of a contract to run a `rapidfuzz`-powered differential analysis. The system intelligently highlights added, removed, unchanged, and modified clauses, using Gemini only to analyze the semantic compliance impact of modifications.
-*   **Context-Aware RAG Chat:** Ask questions about your document and get answers cited directly to the exact page and section using a hybrid FAISS + Keyword (BM25-style) reranking algorithm.
+*   **Context-Aware RAG Chat:** Ask questions about your document and get answers cited directly to the exact page and section. Chat queries are scoped to the active document via FAISS metadata filters, utilizing a hybrid FAISS + Keyword (BM25-style) reranking algorithm.
+*   **Premium Glassmorphic UI & Cinematic Animations:**
+    *   **Interactive Landing Page:** A hardware-accelerated hero view featuring a dynamic neural particle mesh background powered by **Anime.js**, paired with a cinematic text entry sequence powered by **GSAP**.
+    *   **Animated Glassmorphism:** Dashboard metrics and overview cards feature semi-transparent layers and `backdrop-filter: blur(12px)` overlays.
+    *   **Fluid Layout Transitions:** Navigation and uploading events utilize **Framer Motion** `<AnimatePresence>` to sweep smoothly in and out of the viewport.
+    *   **Tailored Scrollbars:** Seamless custom vertical scrollbars that fit the dark premium aesthetic.
 *   **Cost Optimization & Offline Resilience:** 
     *   **Persistent Caching:** Responses are snapshotted in SQLite; repeated analysis costs $0 and runs instantly.
     *   **Graceful Fallbacks:** If the Gemini API rate limit is exceeded, the system automatically falls back to offline Regex parsing and heuristic rules so you are never left blocked.
@@ -54,7 +60,10 @@ graph TD;
 
 **Frontend:**
 *   React 18 + Vite
-*   Vanilla CSS (Clean, Professional UI)
+*   Vanilla CSS (Clean, Premium Glassmorphic UI)
+*   **GSAP** (Cinematic timelines & entry sequences)
+*   **Anime.js** (Dynamic background particle systems)
+*   **Framer Motion** (Fluid page and container transitions)
 *   Axios for API communication
 
 **Backend:**
@@ -128,19 +137,20 @@ npm run dev
 clauseiq/
 ├── backend/
 │   ├── app/
-│   │   ├── api/routes/         # FastAPI Route Controllers (chat, summary, export, metrics)
+│   │   ├── api/routes/         # FastAPI Route Controllers (chat, documents, export, comparison, checklist, etc.)
 │   │   ├── core/               # Configuration and Exception handling
 │   │   ├── db/                 # SQLite Session configurations
-│   │   ├── models/             # SQLAlchemy schemas (Document, Clause, AnalysisSnapshot, Metrics)
+│   │   ├── models/             # SQLAlchemy schemas (Document, Chunk, Clause, AnalysisSnapshot, Metrics)
 │   │   ├── schemas/            # Pydantic validation schemas
 │   │   └── services/           # Core Business Logic (AI, RAG, Comparison, Exports)
 │   ├── exports/                # Generated PDF and DOCX reports
 │   └── test.db                 # Local SQLite Database
+│   └── uploads/                # Local PDF Storage
 └── frontend/
     ├── src/
-    │   ├── components/         # React Components (Dashboard, Observability, ComparisonView)
-    │   ├── App.jsx             # Main Application Container
-    │   └── index.css           # Global Styles
+    │   ├── components/         # React Views & Components (Dashboard, Observability, ComparisonView, UI elements)
+    │   ├── App.jsx             # Main Application Container & Route Transitions
+    │   └── index.css           # Global Styles & Theme Design Tokens
     └── package.json
 ```
 

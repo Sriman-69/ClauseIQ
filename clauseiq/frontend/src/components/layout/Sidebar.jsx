@@ -16,7 +16,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, activeRoute, setActiveRoute }) =
   return (
     <div className="layout-sidebar" style={{ width: isCollapsed ? '72px' : '280px' }}>
       <div className="sidebar-logo">
-        <Scale size={24} color="var(--brand-primary)" />
+        <Scale size={24} color="var(--text-primary)" />
         {!isCollapsed && <span>ClauseIQ</span>}
       </div>
 
@@ -35,10 +35,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, activeRoute, setActiveRoute }) =
       </nav>
 
       <div className="sidebar-toggle">
-        <button
-          onClick={() => setIsCollapsed(!isCollapsed)}
-          style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
-        >
+        <button onClick={() => setIsCollapsed(!isCollapsed)}>
           {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
         </button>
       </div>
