@@ -45,21 +45,27 @@ ClauseIQ is an advanced, AI-powered document analysis and contract intelligence 
 
 ## 🏗️ System Architecture
 
+ClauseIQ follows a highly decoupled, abstraction-centric architecture designed for database and storage engine independence:
+
 ```mermaid
 graph TD;
     Client[React Frontend] -->|REST API| API[FastAPI Backend]
     
-    subgraph Backend Services
-        API --> AIService[AI Gateway Singleton]
-        API --> Search[Hybrid Search Engine]
-        API --> Compare[Comparison Engine]
-        API --> Export[Report Generation]
+    subgraph Routing & Services
+        API --> Services[Business Services]
+        Services --> AIService[AI Gateway]
     end
 
-    subgraph Data Layer
-        Search -->|Semantic| FAISS[(FAISS Vector Store)]
-        Compare -->|Fuzzy Matching| RF[Rapidfuzz]
-        API -->|Snapshots & Lineage| DB[(SQLite Database)]
+    subgraph Abstraction Interfaces
+        Services -->|IStorageProvider| Storage[LocalStorageProvider]
+        Services -->|IVectorStore| Vectors[FAISSVectorStore]
+        Services -->|DB Repositories| Repos[SQL Repositories]
+    end
+
+    subgraph Physical Data Layer
+        Storage --> Disk[(Local disk / uploads/)]
+        Vectors --> FAISSIndex[(faiss_index.bin)]
+        Repos --> SQLiteDB[(SQLite / test.db)]
     end
 
     subgraph External
@@ -84,8 +90,9 @@ graph TD;
 
 **Backend:**
 *   Python 3.12 + FastAPI
-*   SQLAlchemy + SQLite (Persistent Storage & Caching)
-*   FAISS (Vector Database)
+*   SQLAlchemy + SQLite (Decoupled via Repository Pattern & Interfaces)
+*   FAISS (Decoupled via IVectorStore Interface)
+*   Disk File Storage (Decoupled via IStorageProvider Interface)
 *   `google-genai` (Official Google Generative AI SDK)
 *   `rapidfuzz` (Blazing fast string matching for version diffs)
 *   `python-docx` & `reportlab` (Export Generation)
@@ -157,11 +164,14 @@ clauseiq/
 │   │   ├── core/               # Configuration and Exception handling
 │   │   ├── db/                 # SQLite Session configurations
 │   │   ├── models/             # SQLAlchemy schemas (Document, Chunk, Clause, AnalysisSnapshot, Metrics)
+│   │   ├── repositories/       # Abstraction Layer (Document, Chunk, Clause, Snapshot, Metrics Repositories & Interfaces)
 │   │   ├── schemas/            # Pydantic validation schemas
-│   │   └── services/           # Core Business Logic (AI, RAG, Comparison, Exports)
+│   │   ├── services/           # Core Business Logic (AI, RAG, Comparison, Exports)
+│   │   ├── storage/            # File Storage Provider Abstraction (LocalStorageProvider & IStorageProvider)
+│   │   └── vector_store/       # Vector Database Abstraction (FAISSVectorStore & IVectorStore)
 │   ├── exports/                # Generated PDF and DOCX reports
 │   └── test.db                 # Local SQLite Database
-│   └── uploads/                # Local PDF Storage
+│   └── uploads/                # Local PDF Storage Storage Directory
 └── frontend/
     ├── src/
     │   ├── components/         # React Views & Components (Dashboard, Observability, ComparisonView, UI elements)

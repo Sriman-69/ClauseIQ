@@ -12,12 +12,22 @@ import ComparisonView from './components/views/ComparisonView';
 import ObservabilityDashboard from './components/views/ObservabilityDashboard';
 import ExportModal from './components/views/ExportModal';
 import { AnimatePresence, motion } from 'framer-motion';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
 
-function App() {
+function AppContent() {
+  const { isAuthenticated } = useAuth();
   const [document, setDocument] = useState(null);
   const [activeRoute, setActiveRoute] = useState('documents'); // default to documents/upload
   const [isContextOpen, setIsContextOpen] = useState(false);
   const [hasEnteredApp, setHasEnteredApp] = useState(false);
+
+  React.useEffect(() => {
+    if (!isAuthenticated) {
+      setHasEnteredApp(false);
+      setDocument(null);
+    }
+  }, [isAuthenticated]);
 
   const handleUploadSuccess = (doc) => {
     setDocument(doc);
@@ -138,6 +148,14 @@ function App() {
         </motion.div>
       )}
     </AnimatePresence>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 

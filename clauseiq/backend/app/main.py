@@ -1,10 +1,11 @@
 from fastapi import FastAPI, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from app.api.routes import documents, chat, summary, checklist, risks, export, comparison, metrics
+from app.api.routes import documents, chat, summary, checklist, risks, export, comparison, metrics, auth
 from app.core.config import settings
 from app.db.session import engine
 from app.models.document import Base
+from app.models.user import User
 from app.core.exceptions import QuotaExceededException
 
 Base.metadata.create_all(bind=engine)
@@ -34,6 +35,7 @@ async def quota_exceeded_handler(request: Request, exc: QuotaExceededException):
         }
     )
 
+app.include_router(auth.router, prefix="/api/v1", tags=["auth"])
 app.include_router(documents.router, prefix="/api/v1", tags=["documents"])
 app.include_router(chat.router, prefix="/api/v1", tags=["chat"])
 app.include_router(summary.router, prefix="/api/v1", tags=["summary"])

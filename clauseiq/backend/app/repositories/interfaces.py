@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional
 from app.models.document import Document, Chunk, Clause, AnalysisSnapshot, Metrics
+from app.models.user import User
 
 class IDocumentRepository(ABC):
     @abstractmethod
@@ -84,4 +85,18 @@ class IMetricsRepository(ABC):
         pass
 
 class IUserRepository(ABC):
-    pass
+    @abstractmethod
+    def create_user(self, email: str, password_hash: str) -> User:
+        pass
+
+    @abstractmethod
+    def get_by_email(self, email: str) -> Optional[User]:
+        pass
+
+    @abstractmethod
+    def get_by_id(self, user_id: str) -> Optional[User]:
+        pass
+
+    @abstractmethod
+    def user_exists(self, email: str) -> bool:
+        pass

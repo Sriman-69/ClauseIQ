@@ -1,12 +1,20 @@
 import React, { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import axios from 'axios';
-import { UploadCloud, Loader2, Zap, ShieldCheck, Search, ArrowRight } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { UploadCloud, Loader2, Zap, ShieldCheck, Search, ArrowRight, AlertCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '../ui/Button';
+import { useAuth } from '../../context/AuthContext';
+import Login from '../../pages/Login';
+import Register from '../../pages/Register';
 import './landing.css';
 
 const LandingPage = ({ onEnterApp }) => {
+  const { isAuthenticated, logout, currentUser } = useAuth();
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authView, setAuthView] = useState('login');
+  const [toastMessage, setToastMessage] = useState('');
+
   const [isDragging, setIsDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
@@ -87,7 +95,19 @@ const LandingPage = ({ onEnterApp }) => {
     }
   };
 
+  useEffect(() => {
+    if (isAuthenticated) {
+      setShowAuthModal(false);
+    }
+  }, [isAuthenticated]);
+
   const handleFile = async (file) => {
+    if (!isAuthenticated) {
+      setToastMessage('Please log in to upload agreements');
+      setTimeout(() => setToastMessage(''), 4000);
+      return;
+    }
+
     setUploading(true);
     const formData = new FormData();
     formData.append('file', file);
@@ -105,9 +125,231 @@ const LandingPage = ({ onEnterApp }) => {
   };
 
   return (
-    <div className="landing-wrapper">
+    <div className="landing-wrapper" style={{ paddingTop: '80px' }}>
       <div className="landing-background" ref={backgroundRef}></div>
       <div className="landing-grid-overlay"></div>
+
+      {/* Top Navigation Header */}
+      <header style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        padding: '1.25rem 2.5rem',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        zIndex: 10,
+        borderBottom: '1px solid rgba(255, 255, 255, 0.03)',
+        background: 'linear-gradient(to bottom, rgba(5, 5, 7, 0.8) 0%, rgba(5, 5, 7, 0) 100%)',
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '32px',
+            height: '32px',
+            borderRadius: '8px',
+            background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(168, 85, 247, 0.2) 100%)',
+            border: '1px solid rgba(99, 102, 241, 0.3)',
+            color: '#fff'
+          }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v1" />
+              <path d="M18 8h4a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-4" />
+              <circle cx="8" cy="12" r="2" />
+            </svg>
+          </div>
+          <span style={{ fontWeight: 700, fontSize: '1.1rem', letterSpacing: '-0.015em', color: '#fff' }}>ClauseIQ</span>
+        </div>
+
+        <div>
+          {isAuthenticated ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+              <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                Signed in as <strong style={{ color: '#fff', fontWeight: 500 }}>{currentUser?.email}</strong>
+              </span>
+              <button 
+                onClick={logout}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  color: 'var(--text-primary)',
+                  padding: '0.45rem 1.15rem',
+                  borderRadius: '30px',
+                  cursor: 'pointer',
+                  fontSize: '0.825rem',
+                  fontWeight: 600,
+                  transition: 'all 0.2s',
+                  outline: 'none'
+                }}
+                onMouseOver={e => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
+                onMouseOut={e => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'}
+              >
+                Sign Out
+              </button>
+            </div>
+          ) : (
+            <button 
+              onClick={() => { setAuthView('login'); setShowAuthModal(true); }}
+              style={{
+                background: 'rgba(255, 255, 255, 0.03)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                color: '#e2e8f0',
+                padding: '0.55rem 1.4rem',
+                borderRadius: '30px',
+                cursor: 'pointer',
+                fontSize: '0.825rem',
+                fontWeight: 600,
+                transition: 'background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease',
+                outline: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)'
+              }}
+              onMouseOver={e => {
+                e.currentTarget.style.background = '#ffffff';
+                e.currentTarget.style.borderColor = '#ffffff';
+                e.currentTarget.style.color = '#0e0e11';
+              }}
+              onMouseOut={e => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+                e.currentTarget.style.color = '#e2e8f0';
+              }}
+            >
+              <ShieldCheck size={14} style={{ flexShrink: 0 }} />
+              <span>Log In</span>
+            </button>
+          )}
+        </div>
+      </header>
+
+      {/* Floating Toast Notification */}
+      <AnimatePresence>
+        {toastMessage && (
+          <motion.div 
+            initial={{ opacity: 0, x: 120, y: 0, scale: 0.9 }}
+            animate={{ opacity: 1, x: 0, y: 0, scale: 1 }}
+            exit={{ opacity: 0, x: 80, scale: 0.95, transition: { duration: 0.2 } }}
+            transition={{ type: 'spring', stiffness: 350, damping: 24 }}
+            style={{
+              position: 'fixed',
+              top: '1.5rem',
+              right: '1.5rem',
+              zIndex: 9999,
+              width: '360px',
+              backgroundColor: 'rgba(10, 10, 14, 0.85)',
+              border: '1px solid rgba(255, 255, 255, 0.07)',
+              borderLeft: '4px solid #f43f5e',
+              backdropFilter: 'blur(20px)',
+              WebkitBackdropFilter: 'blur(20px)',
+              borderRadius: '14px',
+              padding: '1rem 1.25rem',
+              boxShadow: '0 20px 40px -15px rgba(0, 0, 0, 0.7), 0 1px 0 rgba(255, 255, 255, 0.05) inset, 0 0 30px rgba(244, 63, 94, 0.05)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '1rem'
+            }}
+          >
+            <div style={{
+              background: 'rgba(244, 63, 94, 0.1)',
+              color: '#f43f5e',
+              padding: '0.5rem',
+              borderRadius: '10px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              border: '1px solid rgba(244, 63, 94, 0.2)',
+              flexShrink: 0
+            }}>
+              <AlertCircle size={18} />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem', flexGrow: 1 }}>
+              <div style={{ color: '#f8fafc', fontSize: '0.875rem', fontWeight: 600 }}>Upload Blocked</div>
+              <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', lineHeight: '1.3' }}>
+                {toastMessage}
+              </div>
+            </div>
+            <button 
+              onClick={() => setToastMessage('')}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--text-muted)',
+                cursor: 'pointer',
+                padding: '0.25rem',
+                fontSize: '0.75rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'color 0.2s',
+                outline: 'none'
+              }}
+              onMouseOver={e => e.currentTarget.style.color = '#f8fafc'}
+              onMouseOut={e => e.currentTarget.style.color = 'var(--text-muted)'}
+            >
+              ✕
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Auth Modal Overlay */}
+      {showAuthModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          backgroundColor: 'rgba(5, 5, 7, 0.8)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9998
+        }}>
+          <div style={{ position: 'relative', width: '100%', maxWidth: '440px' }}>
+            <button 
+              onClick={() => setShowAuthModal(false)}
+              style={{
+                position: 'absolute',
+                top: '1.25rem',
+                right: '1.25rem',
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                color: 'var(--text-secondary)',
+                borderRadius: '50%',
+                width: '32px',
+                height: '32px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 9999,
+                transition: 'all 0.2s',
+                outline: 'none'
+              }}
+              onMouseOver={e => e.currentTarget.style.color = '#fff'}
+              onMouseOut={e => e.currentTarget.style.color = 'var(--text-secondary)'}
+            >
+              ✕
+            </button>
+            {authView === 'login' ? (
+              <Login onToggle={() => setAuthView('register')} isModal={true} />
+            ) : (
+              <Register onToggle={() => setAuthView('login')} isModal={true} />
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="landing-content">
         <h1 className="hero-title" ref={heroRef}>
@@ -126,7 +368,16 @@ const LandingPage = ({ onEnterApp }) => {
             onDragLeave={handleDrag}
             onDragOver={handleDrag}
             onDrop={handleDrop}
-            onClick={() => !uploading && fileInputRef.current?.click()}
+            onClick={(e) => {
+              if (uploading) return;
+              if (!isAuthenticated) {
+                e.preventDefault();
+                setToastMessage('Please log in to upload agreements');
+                setTimeout(() => setToastMessage(''), 4000);
+                return;
+              }
+              fileInputRef.current?.click();
+            }}
           >
             <input 
               type="file" 
