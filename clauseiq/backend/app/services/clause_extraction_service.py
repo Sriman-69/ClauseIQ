@@ -1,22 +1,26 @@
 import json
-import uuid
 import re
-from app.db.session import get_db
 from app.models.document import Document, Chunk, Clause
+from app.repositories.document_repository import DocumentRepository
+from app.repositories.clause_repository import ClauseRepository
+from app.repositories.chunk_repository import ChunkRepository
 from app.core.exceptions import QuotaExceededException
 from app.services.ai_service import AIService
 
 class ClauseExtractionService:
-    def __init__(self):
-        self.db = next(get_db())
+    def __init__(self, db):
+        self.db = db
+        self.document_repo = DocumentRepository(db)
+        self.clause_repo = ClauseRepository(db)
+        self.chunk_repo = ChunkRepository(db)
         self.ai_service = AIService()
 
     async def extract_clauses(self, document_id: str):
-        document = self.db.query(Document).filter(Document.id == document_id).first()
+        document = self.document_repo.get_by_id(document_id, user_id=None)
         if not document:
             raise ValueError("Document not found")
 
-        chunks = self.db.query(Chunk).filter(Chunk.document_id == document_id).order_by(Chunk.page).all()
+        chunks = self.chunk_repo.get_chunks(document_id, user_id=None)
         content = "\n\n".join([f"Page {chunk.page}: {chunk.content}" for chunk in chunks])
 
         prompt = f"""
@@ -55,13 +59,11 @@ class ClauseExtractionService:
 
         for c_data in clauses_data:
             clause = Clause(
-                id=str(uuid.uuid4()),
                 document_id=document_id,
                 clause_identifier=c_data.get('clause_id', 'Unknown'),
                 title=c_data.get('title', 'Untitled'),
                 content=c_data.get('content', '')
             )
-            self.db.add(clause)
-        self.db.commit()
+            self.clause_repo.create_clause(clause, user_id=None)
 
 

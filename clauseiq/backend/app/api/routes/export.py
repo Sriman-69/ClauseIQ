@@ -1,15 +1,17 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import FileResponse
+from sqlalchemy.orm import Session
 import os
+from app.db.session import get_db
 from app.services.export_service import ExportService
 from app.schemas.analysis import ExportResponse
 
 router = APIRouter()
-export_service = ExportService()
 
 @router.post("/documents/{document_id}/export", response_model=ExportResponse)
-async def generate_export(document_id: str, format: str = "pdf"):
+async def generate_export(document_id: str, format: str = "pdf", db: Session = Depends(get_db)):
     try:
+        export_service = ExportService(db)
         return await export_service.export_report(document_id, export_format=format)
     except HTTPException:
         raise

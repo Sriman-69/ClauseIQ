@@ -1,8 +1,9 @@
 import faiss
 import numpy as np
 import pickle
+from app.vector_store.interfaces import IVectorStore
 
-class FAISSVectorStore:
+class FAISSVectorStore(IVectorStore):
     def __init__(self, index_path="faiss_index.bin", metadata_path="faiss_metadata.pkl"):
         self.index_path = index_path
         self.metadata_path = metadata_path

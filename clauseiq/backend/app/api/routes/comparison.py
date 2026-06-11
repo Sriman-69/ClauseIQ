@@ -1,27 +1,26 @@
 import json
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
+from sqlalchemy.orm import Session
 from app.schemas.comparison import ComparisonRequest, ComparisonDashboardResponse
 from app.services.comparison_service import ComparisonService
 from app.services.comparison_export_service import ComparisonExportService
 from app.db.session import get_db
 from app.models.document import AnalysisSnapshot, Document
+from app.repositories.document_repository import DocumentRepository
+from app.repositories.snapshot_repository import SnapshotRepository
 
 router = APIRouter()
-comparison_service = ComparisonService()
 export_service = ComparisonExportService()
 
 @router.post("/compare")
-async def compare_documents(request: ComparisonRequest):
+async def compare_documents(request: ComparisonRequest, db: Session = Depends(get_db)):
     try:
-        db = next(get_db())
+        snapshot_repo = SnapshotRepository(db)
+        comparison_service = ComparisonService(db)
         cache_key = f"{request.doc_a_id}_{request.doc_b_id}"
         
         # Check cache
-        cached = db.query(AnalysisSnapshot).filter(
-            AnalysisSnapshot.document_id == cache_key,
-            AnalysisSnapshot.analysis_type == 'comparison'
-        ).first()
-        
+        cached = snapshot_repo.get_snapshot(cache_key, "comparison")
         if cached:
             return json.loads(cached.result_json)
         
@@ -54,15 +53,12 @@ async def compare_documents(request: ComparisonRequest):
             }
         }
         
-        import uuid
         cache_entry = AnalysisSnapshot(
-            id=str(uuid.uuid4()),
             document_id=cache_key,
             analysis_type="comparison",
             result_json=json.dumps(final_response)
         )
-        db.add(cache_entry)
-        db.commit()
+        snapshot_repo.create_snapshot(cache_entry)
         
         return final_response
     except HTTPException:
@@ -73,13 +69,10 @@ async def compare_documents(request: ComparisonRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/compare/{comparison_id}")
-async def get_comparison(comparison_id: str):
+async def get_comparison(comparison_id: str, db: Session = Depends(get_db)):
     try:
-        db = next(get_db())
-        cached = db.query(AnalysisSnapshot).filter(
-            AnalysisSnapshot.document_id == comparison_id,
-            AnalysisSnapshot.analysis_type == 'comparison'
-        ).first()
+        snapshot_repo = SnapshotRepository(db)
+        cached = snapshot_repo.get_snapshot(comparison_id, "comparison")
         if cached:
             return json.loads(cached.result_json)
         raise HTTPException(status_code=404, detail="Comparison not found")
@@ -91,25 +84,29 @@ async def get_comparison(comparison_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/export/comparison")
-async def export_comparison(request: ComparisonRequest):
+async def export_comparison(request: ComparisonRequest, db: Session = Depends(get_db)):
     try:
-        db = next(get_db())
-        doc_a = db.query(Document).filter(Document.id == request.doc_a_id).first()
-        doc_b = db.query(Document).filter(Document.id == request.doc_b_id).first()
+        document_repo = DocumentRepository(db)
+        snapshot_repo = SnapshotRepository(db)
+        
+        doc_a = document_repo.get_by_id(request.doc_a_id)
+        doc_b = document_repo.get_by_id(request.doc_b_id)
+        
+        if not doc_a or not doc_b:
+            raise HTTPException(status_code=404, detail="One or both documents not found")
         
         cache_key = f"{request.doc_a_id}_{request.doc_b_id}"
-        cached = db.query(AnalysisSnapshot).filter(
-            AnalysisSnapshot.document_id == cache_key,
-            AnalysisSnapshot.analysis_type == 'comparison'
-        ).first()
+        cached = snapshot_repo.get_snapshot(cache_key, "comparison")
         
         if cached:
             result = json.loads(cached.result_json)
         else:
-            result = await compare_documents(request)
+            result = await compare_documents(request, db)
             
         download = await export_service.export_comparison_report(doc_a.filename, doc_b.filename, result['comparison_result'])
         return download
+    except HTTPException:
+        raise
     except Exception as e:
         import traceback
         traceback.print_exc()

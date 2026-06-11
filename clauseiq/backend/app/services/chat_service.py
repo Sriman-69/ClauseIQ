@@ -1,13 +1,10 @@
-import json
-from app.db.session import get_db
-from app.models.document import Document, Chunk
 from app.services.search_service import SearchService
 from app.core.exceptions import QuotaExceededException
 from app.services.ai_service import AIService
 
 class ChatService:
-    def __init__(self):
-        self.db = next(get_db())
+    def __init__(self, db):
+        self.db = db
         self.search_service = SearchService()
         self.ai_service = AIService()
 

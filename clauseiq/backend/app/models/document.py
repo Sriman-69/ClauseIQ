@@ -1,3 +1,4 @@
+import uuid
 from sqlalchemy import Column, String, Integer, Text, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 import datetime
@@ -6,7 +7,7 @@ Base = declarative_base()
 
 class Document(Base):
     __tablename__ = "documents"
-    id = Column(String, primary_key=True, index=True)
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()), index=True)
     filename = Column(String, index=True)
     content_hash = Column(String, unique=False, index=True) # allow same content for different versions just in case
     storage_path = Column(String)
@@ -16,7 +17,7 @@ class Document(Base):
 
 class Chunk(Base):
     __tablename__ = "chunks"
-    id = Column(String, primary_key=True, index=True)
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()), index=True)
     document_id = Column(String, index=True)
     page = Column(Integer)
     section = Column(String, nullable=True)
@@ -24,7 +25,7 @@ class Chunk(Base):
 
 class Clause(Base):
     __tablename__ = "clauses"
-    id = Column(String, primary_key=True, index=True)
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()), index=True)
     document_id = Column(String, index=True)
     clause_identifier = Column(String)
     title = Column(String)
@@ -32,7 +33,7 @@ class Clause(Base):
 
 class AnalysisSnapshot(Base):
     __tablename__ = "analysis_snapshots"
-    id = Column(String, primary_key=True, index=True)
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()), index=True)
     document_id = Column(String, index=True)
     document_hash = Column(String, index=True)
     analysis_type = Column(String, index=True) # summary, checklist, risks, comparison

@@ -7,21 +7,21 @@ from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
 from docx import Document as DocxDocument
-from app.db.session import get_db
-from app.models.document import Document
+from app.repositories.document_repository import DocumentRepository
 from app.services.summary_service import SummaryService
 from app.services.checklist_service import ChecklistService
 from app.services.risk_service import RiskService
 
 class ExportService:
-    def __init__(self):
-        self.db = next(get_db())
-        self.summary_service = SummaryService()
-        self.checklist_service = ChecklistService()
-        self.risk_service = RiskService()
+    def __init__(self, db):
+        self.db = db
+        self.document_repo = DocumentRepository(db)
+        self.summary_service = SummaryService(db)
+        self.checklist_service = ChecklistService(db)
+        self.risk_service = RiskService(db)
 
     async def export_report(self, document_id: str, export_format: str = 'pdf') -> dict:
-        document = self.db.query(Document).filter(Document.id == document_id).first()
+        document = self.document_repo.get_by_id(document_id, user_id=None)
         if not document:
             raise ValueError("Document not found")
 

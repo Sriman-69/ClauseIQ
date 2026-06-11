@@ -1,13 +1,15 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
+from sqlalchemy.orm import Session
+from app.db.session import get_db
 from app.services.risk_service import RiskService
 from app.schemas.analysis import RiskResponse
 
 router = APIRouter()
-risk_service = RiskService()
 
 @router.get("/documents/{document_id}/risks", response_model=RiskResponse)
-async def analyze_risks(document_id: str):
+async def analyze_risks(document_id: str, db: Session = Depends(get_db)):
     try:
+        risk_service = RiskService(db)
         return await risk_service.analyze_risks(document_id)
     except HTTPException:
         raise

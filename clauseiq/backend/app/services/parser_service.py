@@ -1,16 +1,19 @@
 import fitz  # PyMuPDF
 from app.models.document import Chunk
-from app.db.session import get_db
+from app.repositories.chunk_repository import ChunkRepository
+from app.storage.local import LocalStorageProvider
 from app.services.embedding_service import EmbeddingService
-import uuid
 
 class ParserService:
-    def __init__(self):
-        self.db = next(get_db())
+    def __init__(self, db, storage_provider=None):
+        self.db = db
+        self.chunk_repo = ChunkRepository(db)
+        self.storage_provider = storage_provider or LocalStorageProvider()
         self.embedding_service = EmbeddingService()
 
     async def parse_document(self, document):
-        doc = fitz.open(document.storage_path)
+        local_path = self.storage_provider.get_file_path(document.storage_path)
+        doc = fitz.open(local_path)
         chunks = []
         for page_num in range(len(doc)):
             page = doc.load_page(page_num)
@@ -20,18 +23,14 @@ class ParserService:
             paragraphs = text.split('\n\n')
             for para in paragraphs:
                 if para.strip():
-                    chunk_id = str(uuid.uuid4())
                     db_chunk = Chunk(
-                        id=chunk_id,
                         document_id=document.id,
                         page=page_num + 1,
                         content=para.strip()
                     )
-                    self.db.add(db_chunk)
+                    self.chunk_repo.add_chunk(db_chunk)
                     chunks.append(db_chunk)
         
-        self.db.commit()
-
         # Embed chunks
         contents = [chunk.content for chunk in chunks]
         print("Chunks created:", len(contents))
@@ -42,7 +41,7 @@ class ParserService:
         print("Saving to FAISS...")
         self.embedding_service.vector_store.add_embeddings(embeddings, [{
             "document_id": str(chunk.document_id), 
-            "chunk_id": str(chunk.id), 
+            "user_id": None,
             "page": chunk.page, 
             "section": chunk.section, 
             "document_name": document.filename,
@@ -52,7 +51,7 @@ class ParserService:
         # Extract structured clauses for Phase 4 version comparison
         try:
             from app.services.clause_extraction_service import ClauseExtractionService
-            clause_service = ClauseExtractionService()
+            clause_service = ClauseExtractionService(self.db)
             await clause_service.extract_clauses(document.id)
             print("Clauses extracted and saved.")
         except Exception as e:

@@ -6,6 +6,8 @@ from app.db.session import get_db
 from app.models.document import Metrics
 import json
 
+from app.repositories.metrics_repository import MetricsRepository
+
 class AIService:
     _instance = None
 
@@ -18,13 +20,8 @@ class AIService:
     def _log_metric(self, action: str):
         try:
             db = next(get_db())
-            metric = db.query(Metrics).filter(Metrics.action == action).first()
-            if metric:
-                metric.count += 1
-            else:
-                metric = Metrics(action=action, count=1)
-                db.add(metric)
-            db.commit()
+            repo = MetricsRepository(db)
+            repo.increment(action)
         except Exception as e:
             print(f"Failed to log metric: {e}")
 

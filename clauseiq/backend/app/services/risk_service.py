@@ -1,37 +1,31 @@
 import json
-import uuid
-import re
-from app.core.config import settings
-from app.db.session import get_db
-from app.models.document import Document, Chunk, AnalysisSnapshot, Metrics
-from app.schemas.analysis import RiskResponse
+from app.models.document import Document, Chunk, AnalysisSnapshot
+from app.repositories.document_repository import DocumentRepository
+from app.repositories.snapshot_repository import SnapshotRepository
+from app.repositories.metrics_repository import MetricsRepository
+from app.repositories.chunk_repository import ChunkRepository
 from app.core.exceptions import QuotaExceededException
 from app.services.ai_service import AIService
 
 class RiskService:
-    def __init__(self):
-        self.db = next(get_db())
+    def __init__(self, db):
+        self.db = db
+        self.document_repo = DocumentRepository(db)
+        self.snapshot_repo = SnapshotRepository(db)
+        self.metrics_repo = MetricsRepository(db)
+        self.chunk_repo = ChunkRepository(db)
         self.ai_service = AIService()
 
     def _log_metric(self, action: str):
-        metric = self.db.query(Metrics).filter(Metrics.action == action).first()
-        if metric:
-            metric.count += 1
-        else:
-            self.db.add(Metrics(action=action, count=1))
-        self.db.commit()
+        self.metrics_repo.increment(action)
 
     async def analyze_risks(self, document_id: str) -> dict:
-        document = self.db.query(Document).filter(Document.id == document_id).first()
+        document = self.document_repo.get_by_id(document_id, user_id=None)
         if not document:
             raise ValueError("Document not found")
 
         # 1. Check Snapshot/Cache
-        snapshot = self.db.query(AnalysisSnapshot).filter(
-            AnalysisSnapshot.document_id == document_id,
-            AnalysisSnapshot.document_hash == document.content_hash,
-            AnalysisSnapshot.analysis_type == 'risks'
-        ).first()
+        snapshot = self.snapshot_repo.get_snapshot(document_id, "risks", document.content_hash, user_id=None)
 
         if snapshot:
             self._log_metric("cache_hit")
@@ -39,7 +33,7 @@ class RiskService:
 
         self._log_metric("cache_miss")
 
-        chunks = self.db.query(Chunk).filter(Chunk.document_id == document_id).order_by(Chunk.page).all()
+        chunks = self.chunk_repo.get_chunks(document_id, user_id=None)
         content = "\n\n".join([f"Page {chunk.page}: {chunk.content}" for chunk in chunks])
 
         prompt = f"""
@@ -78,13 +72,11 @@ class RiskService:
 
         # 3. Save Snapshot
         new_snapshot = AnalysisSnapshot(
-            id=str(uuid.uuid4()),
             document_id=document_id,
             document_hash=document.content_hash,
             analysis_type="risks",
             result_json=json.dumps(result)
         )
-        self.db.add(new_snapshot)
-        self.db.commit()
+        self.snapshot_repo.create_snapshot(new_snapshot, user_id=None)
             
         return result

@@ -1,23 +1,25 @@
-import numpy as np
 from rapidfuzz import fuzz
-from app.db.session import get_db
 from app.models.document import Document, Clause
+from app.repositories.document_repository import DocumentRepository
+from app.repositories.clause_repository import ClauseRepository
 from app.services.change_analysis_service import ChangeAnalysisService
 
 class ComparisonService:
-    def __init__(self):
-        self.db = next(get_db())
+    def __init__(self, db):
+        self.db = db
+        self.document_repo = DocumentRepository(db)
+        self.clause_repo = ClauseRepository(db)
         self.change_service = ChangeAnalysisService()
 
     async def compare_documents(self, doc_a_id: str, doc_b_id: str) -> dict:
-        doc_a = self.db.query(Document).filter(Document.id == doc_a_id).first()
-        doc_b = self.db.query(Document).filter(Document.id == doc_b_id).first()
+        doc_a = self.document_repo.get_by_id(doc_a_id, user_id=None)
+        doc_b = self.document_repo.get_by_id(doc_b_id, user_id=None)
         
         if not doc_a or not doc_b:
             raise ValueError("One or both documents not found")
 
-        clauses_a = self.db.query(Clause).filter(Clause.document_id == doc_a_id).all()
-        clauses_b = self.db.query(Clause).filter(Clause.document_id == doc_b_id).all()
+        clauses_a = self.clause_repo.get_document_clauses(doc_a_id, user_id=None)
+        clauses_b = self.clause_repo.get_document_clauses(doc_b_id, user_id=None)
 
         added = []
         removed = []

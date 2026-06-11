@@ -1,16 +1,18 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
+from sqlalchemy.orm import Session
+from app.db.session import get_db
 from app.schemas.chat import ChatQuery, ChatResponse
 from app.services.chat_service import ChatService
 
 router = APIRouter()
-chat_service = ChatService()
 
 @router.post("/chat", response_model=ChatResponse)
-async def chat(query: ChatQuery):
+async def chat(query: ChatQuery, db: Session = Depends(get_db)):
     """
     Chat with the RAG system.
     """
     try:
+        chat_service = ChatService(db)
         response = await chat_service.chat(
             query=query.query, 
             document_id=query.document_id,

@@ -13,17 +13,33 @@ ClauseIQ is an advanced, AI-powered document analysis and contract intelligence 
     *   **Risk Analysis:** Flags High, Medium, and Low risks with citations back to the source text.
 *   **Clause Explorer:** Browse all extracted clauses of a contract grouped, identified, and mapped back to their source page numbers using an overlap matching heuristic.
 *   **Document Versioning & Comparison Engine:** Upload a newer version of a contract to run a `rapidfuzz`-powered differential analysis. The system intelligently highlights added, removed, unchanged, and modified clauses, using Gemini only to analyze the semantic compliance impact of modifications.
-*   **Context-Aware RAG Chat:** Ask questions about your document and get answers cited directly to the exact page and section. Chat queries are scoped to the active document via FAISS metadata filters, utilizing a hybrid FAISS + Keyword (BM25-style) reranking algorithm.
-*   **Premium Glassmorphic UI & Cinematic Animations:**
-    *   **Interactive Landing Page:** A hardware-accelerated hero view featuring a dynamic neural particle mesh background powered by **Anime.js**, paired with a cinematic text entry sequence powered by **GSAP**.
-    *   **Animated Glassmorphism:** Dashboard metrics and overview cards feature semi-transparent layers and `backdrop-filter: blur(12px)` overlays.
-    *   **Fluid Layout Transitions:** Navigation and uploading events utilize **Framer Motion** `<AnimatePresence>` to sweep smoothly in and out of the viewport.
-    *   **Tailored Scrollbars:** Seamless custom vertical scrollbars that fit the dark premium aesthetic.
+*   **Context-Aware RAG Chat (Multi-Stage Retrieval Pipeline):** Ask questions about your document and get answers cited directly to the exact page and section. Instead of a basic single-pass vector search, ClauseIQ implements a production-grade multi-stage pipeline:
+    *   *Candidate Expansion*: Queries FAISS for `top_k * 2` candidates to maximize recall.
+    *   *Metadata Scoping*: Restricts vectors strictly to the active `document_id` to prevent cross-document leakage.
+    *   *Hybrid Reranking*: Re-scores chunks using a weighted combination of semantic similarity ($0.7$) and Jaccard token overlap ($0.3$) to prioritize exact keyword matches (e.g. key figures, dates, negations).
+    *   *Context Synthesis*: Feeds the top 5 reranked results to Gemini for generation.
+*   **Premium Glassmorphism UI:** Responsive dashboard design utilizing a modern glassmorphism aesthetic built using **React**, **GSAP**, **Anime.js**, and **Framer Motion**.
 *   **Cost Optimization & Offline Resilience:** 
     *   **Persistent Caching:** Responses are snapshotted in SQLite; repeated analysis costs $0 and runs instantly.
     *   **Graceful Fallbacks:** If the Gemini API rate limit is exceeded, the system automatically falls back to offline Regex parsing and heuristic rules so you are never left blocked.
 *   **Multi-Format Export Engine:** Instantly export comprehensive analysis reports to **PDF**, **DOCX**, or **JSON**.
 *   **Observability Dashboard:** Real-time metrics UI tracking API usage, cache hits, misses, and overall cost savings.
+
+---
+
+## 🛠️ Engineering Challenges Solved
+
+### 1. Preventing Cross-Document Retrieval Leakage
+*   **Challenge:** Vector databases can return semantically similar chunks from unrelated documents.
+*   **Solution:** Implemented metadata-scoped retrieval using `document_id` filtering during FAISS candidate selection to guarantee that chat responses only use chunks belonging to the active document.
+
+### 2. Operating During AI Outages
+*   **Challenge:** Gemini rate limits and service outages can make AI-powered systems unusable.
+*   **Solution:** Built a multi-layer fallback architecture that replaces AI functionality with local heuristic processing for summaries, compliance analysis, risk detection, and clause extraction.
+
+### 3. Accurate Contract Version Comparison
+*   **Challenge:** Embedding similarity often misses legally significant changes involving numbers, dates, or negations.
+*   **Solution:** Implemented a RapidFuzz-powered comparison engine with semantic impact analysis triggered only for modified clauses, reducing API costs while improving precision.
 
 ---
 
@@ -60,10 +76,10 @@ graph TD;
 
 **Frontend:**
 *   React 18 + Vite
-*   Vanilla CSS (Clean, Premium Glassmorphic UI)
-*   **GSAP** (Cinematic timelines & entry sequences)
-*   **Anime.js** (Dynamic background particle systems)
-*   **Framer Motion** (Fluid page and container transitions)
+*   Vanilla CSS (Glassmorphism UI)
+*   **GSAP** (UI entry animations)
+*   **Anime.js** (Particle transitions)
+*   **Framer Motion** (Layout transitions)
 *   Axios for API communication
 
 **Backend:**

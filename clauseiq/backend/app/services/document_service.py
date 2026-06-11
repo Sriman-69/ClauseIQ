@@ -1,58 +1,56 @@
 import hashlib
 import uuid
+import os
 from fastapi import UploadFile
 from typing import List
 
-from app.db.session import get_db
 from app.models.document import Document, Chunk, Clause
+from app.repositories.document_repository import DocumentRepository
+from app.repositories.clause_repository import ClauseRepository
+from app.repositories.chunk_repository import ChunkRepository
+from app.storage.local import LocalStorageProvider
 from app.services.parser_service import ParserService
 
 class DocumentService:
-    def __init__(self):
-        self.db = next(get_db())
-        self.parser_service = ParserService()
+    def __init__(self, db, storage_provider=None):
+        self.db = db
+        self.document_repo = DocumentRepository(db)
+        self.clause_repo = ClauseRepository(db)
+        self.chunk_repo = ChunkRepository(db)
+        self.storage_provider = storage_provider or LocalStorageProvider()
+        self.parser_service = ParserService(db, self.storage_provider)
 
     async def create_document(self, file: UploadFile, parent_document_id: str = None) -> Document:
         content = await file.read()
         content_hash = hashlib.md5(content).hexdigest()
 
-        # If a duplicate is found but no parent is provided, we can return the existing document to save processing.
-        # But if it's explicitly a new version, we should allow it to be processed as a new version.
-        db_document = self.db.query(Document).filter(Document.content_hash == content_hash).first()
+        # Check for duplicate document
+        db_document = self.document_repo.get_by_hash(content_hash, user_id=None)
         if db_document and not parent_document_id:
             return db_document
 
-        document_id = str(uuid.uuid4())
+        # Generate a temporary ID for file storage naming before the model generates its final primary key
+        temp_id = str(uuid.uuid4())
         
-        import os
-        
-        # Store the file
-        UPLOAD_DIR = "uploads"
-        os.makedirs(UPLOAD_DIR, exist_ok=True)
-        storage_path = os.path.join(UPLOAD_DIR, f"{document_id}_{file.filename}")
-        
-        with open(storage_path, "wb") as f:
-            f.write(content)
+        # Save file via storage provider
+        storage_path = self.storage_provider.save_file(content, file.filename, custom_id=temp_id)
 
         version_number = 1
         if parent_document_id:
-            parent_doc = self.db.query(Document).filter(Document.id == parent_document_id).first()
+            parent_doc = self.document_repo.get_by_id(parent_document_id, user_id=None)
             if parent_doc:
                 version_number = parent_doc.version_number + 1
             else:
                 raise ValueError("Parent document not found")
 
         db_document = Document(
-            id=document_id,
             filename=file.filename,
             content_hash=content_hash,
             storage_path=storage_path,
             version_number=version_number,
             parent_document_id=parent_document_id
         )
-        self.db.add(db_document)
-        self.db.commit()
-        self.db.refresh(db_document)
+        self.document_repo.create(db_document, user_id=None)
 
         # Parse and chunk the document
         await self.parser_service.parse_document(db_document)
@@ -60,14 +58,14 @@ class DocumentService:
         return db_document
 
     async def get_document(self, document_id: str) -> Document:
-        return self.db.query(Document).filter(Document.id == document_id).first()
+        return self.document_repo.get_by_id(document_id, user_id=None)
 
     async def get_all_documents(self) -> List[Document]:
-        return self.db.query(Document).all()
+        return self.document_repo.get_all(user_id=None)
 
     async def get_clauses(self, document_id: str) -> List[Clause]:
-        clauses = self.db.query(Clause).filter(Clause.document_id == document_id).all()
-        chunks = self.db.query(Chunk).filter(Chunk.document_id == document_id).all()
+        clauses = self.clause_repo.get_document_clauses(document_id, user_id=None)
+        chunks = self.chunk_repo.get_chunks(document_id, user_id=None)
         
         for clause in clauses:
             clause.page_number = 1

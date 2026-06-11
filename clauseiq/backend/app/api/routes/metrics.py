@@ -1,13 +1,14 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
 from app.db.session import get_db
-from app.models.document import Metrics
+from app.repositories.metrics_repository import MetricsRepository
 
 router = APIRouter()
 
 @router.get("")
-def get_metrics():
-    db = next(get_db())
-    metrics_data = db.query(Metrics).all()
+def get_metrics(db: Session = Depends(get_db)):
+    metrics_repo = MetricsRepository(db)
+    metrics_data = metrics_repo.get_all(user_id=None)
     
     stats = {
         "uploads": 0,
