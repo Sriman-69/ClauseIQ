@@ -1,6 +1,6 @@
 import os
 import uuid
-from datetime import datetime
+from datetime import datetime, UTC
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
@@ -28,7 +28,7 @@ class ComparisonExportService:
         story.append(Paragraph("ClauseIQ Comparison Report", title_style))
         story.append(Paragraph(f"<b>Original:</b> {doc_a_name}", normal_style))
         story.append(Paragraph(f"<b>New Version:</b> {doc_b_name}", normal_style))
-        story.append(Paragraph(f"Generated on: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC", normal_style))
+        story.append(Paragraph(f"Generated on: {datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S')} UTC", normal_style))
         story.append(Spacer(1, 12))
 
         # Added

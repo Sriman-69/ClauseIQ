@@ -17,16 +17,18 @@ class AIService:
             cls._instance.client = genai.Client(api_key=settings.GEMINI_API_KEY)
         return cls._instance
 
-    def _log_metric(self, action: str):
+    def _log_metric(self, action: str, user_id: str = None):
+        if not user_id:
+            return
         try:
             db = next(get_db())
             repo = MetricsRepository(db)
-            repo.increment(action)
+            repo.increment(action, user_id=user_id)
         except Exception as e:
             print(f"Failed to log metric: {e}")
 
-    async def generate_json(self, prompt: str, model_name: str = 'gemini-2.5-flash') -> dict:
-        self._log_metric("gemini_call")
+    async def generate_json(self, prompt: str, user_id: str = None, model_name: str = 'gemini-2.5-flash') -> dict:
+        self._log_metric("gemini_call", user_id=user_id)
         try:
             response = self.client.models.generate_content(
                 model=model_name,
@@ -47,8 +49,8 @@ class AIService:
             text = text[:-3]
         return json.loads(text.strip())
 
-    async def generate_text(self, prompt: str, model_name: str = 'gemini-2.5-flash') -> str:
-        self._log_metric("gemini_call")
+    async def generate_text(self, prompt: str, user_id: str = None, model_name: str = 'gemini-2.5-flash') -> str:
+        self._log_metric("gemini_call", user_id=user_id)
         try:
             response = self.client.models.generate_content(
                 model=model_name,

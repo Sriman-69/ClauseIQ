@@ -29,10 +29,58 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('refresh_token');
     delete axios.defaults.headers.common['Authorization'];
     setToken(null);
     setCurrentUser(null);
   };
+
+  useEffect(() => {
+    const interceptor = axios.interceptors.response.use(
+      (response) => response,
+      async (error) => {
+        const originalRequest = error.config;
+        if (
+          error.response?.status === 401 &&
+          !originalRequest._retry &&
+          originalRequest.url &&
+          !originalRequest.url.includes('/auth/refresh') &&
+          !originalRequest.url.includes('/auth/login')
+        ) {
+          const refreshToken = localStorage.getItem('refresh_token');
+          if (refreshToken) {
+            originalRequest._retry = true;
+            try {
+              const res = await axios.post(`${API_BASE_URL}/auth/refresh`, {
+                refresh_token: refreshToken,
+              });
+              const { access_token, refresh_token: newRefreshToken } = res.data;
+              
+              localStorage.setItem('token', access_token);
+              if (newRefreshToken) {
+                localStorage.setItem('refresh_token', newRefreshToken);
+              }
+              
+              axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
+              originalRequest.headers['Authorization'] = `Bearer ${access_token}`;
+              
+              setToken(access_token);
+              
+              return axios(originalRequest);
+            } catch (err) {
+              logout();
+              return Promise.reject(err);
+            }
+          }
+        }
+        return Promise.reject(error);
+      }
+    );
+
+    return () => {
+      axios.interceptors.response.eject(interceptor);
+    };
+  }, []);
 
   useEffect(() => {
     if (token) {
@@ -49,14 +97,32 @@ export const AuthProvider = ({ children }) => {
             setCurrentUser(res.data);
           })
           .catch(() => {
-            logout();
+            // Interceptor handles retry/logout
           })
           .finally(() => {
             setLoading(false);
           });
       } else {
-        logout();
-        setLoading(false);
+        // Access token is expired on load, attempt immediate refresh
+        const refreshToken = localStorage.getItem('refresh_token');
+        if (refreshToken) {
+          axios.post(`${API_BASE_URL}/auth/refresh`, { refresh_token: refreshToken })
+            .then(res => {
+              const { access_token, refresh_token: newRefreshToken } = res.data;
+              localStorage.setItem('token', access_token);
+              if (newRefreshToken) {
+                localStorage.setItem('refresh_token', newRefreshToken);
+              }
+              setToken(access_token);
+            })
+            .catch(() => {
+              logout();
+              setLoading(false);
+            });
+        } else {
+          logout();
+          setLoading(false);
+        }
       }
     } else {
       delete axios.defaults.headers.common['Authorization'];
@@ -71,8 +137,9 @@ export const AuthProvider = ({ children }) => {
         email,
         password,
       });
-      const { access_token } = response.data;
+      const { access_token, refresh_token } = response.data;
       localStorage.setItem('token', access_token);
+      localStorage.setItem('refresh_token', refresh_token);
       setToken(access_token);
       return { success: true };
     } catch (error) {
@@ -87,8 +154,9 @@ export const AuthProvider = ({ children }) => {
         email,
         password,
       });
-      const { access_token } = response.data;
+      const { access_token, refresh_token } = response.data;
       localStorage.setItem('token', access_token);
+      localStorage.setItem('refresh_token', refresh_token);
       setToken(access_token);
       return { success: true };
     } catch (error) {

@@ -6,13 +6,36 @@ from app.db.session import get_db
 from app.services.export_service import ExportService
 from app.schemas.analysis import ExportResponse
 
+from app.api.dependencies.auth import get_current_user
+from app.models.user import User
+from app.repositories.document_repository import DocumentRepository
+from app.repositories.activity_log_repository import ActivityLogRepository
+
 router = APIRouter()
 
 @router.post("/documents/{document_id}/export", response_model=ExportResponse)
-async def generate_export(document_id: str, format: str = "pdf", db: Session = Depends(get_db)):
+async def generate_export(
+    document_id: str, 
+    format: str = "pdf", 
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    doc_repo = DocumentRepository(db)
+    doc = doc_repo.get_by_id(document_id, user_id=None)
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+    if doc.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Forbidden: You do not own this document")
+
     try:
         export_service = ExportService(db)
-        return await export_service.export_report(document_id, export_format=format)
+        result = await export_service.export_report(document_id, user_id=current_user.id, export_format=format)
+        
+        # Log the activity
+        activity_log_repo = ActivityLogRepository(db)
+        activity_log_repo.log_activity(user_id=current_user.id, action="export", document_id=document_id)
+        
+        return result
     except HTTPException:
         raise
     except Exception as e:

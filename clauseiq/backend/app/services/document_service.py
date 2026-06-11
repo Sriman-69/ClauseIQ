@@ -20,12 +20,12 @@ class DocumentService:
         self.storage_provider = storage_provider or LocalStorageProvider()
         self.parser_service = ParserService(db, self.storage_provider)
 
-    async def create_document(self, file: UploadFile, parent_document_id: str = None) -> Document:
+    async def create_document(self, file: UploadFile, user_id: str, parent_document_id: str = None) -> Document:
         content = await file.read()
         content_hash = hashlib.md5(content).hexdigest()
 
         # Check for duplicate document
-        db_document = self.document_repo.get_by_hash(content_hash, user_id=None)
+        db_document = self.document_repo.get_by_hash(content_hash, user_id=user_id)
         if db_document and not parent_document_id:
             return db_document
 
@@ -37,7 +37,7 @@ class DocumentService:
 
         version_number = 1
         if parent_document_id:
-            parent_doc = self.document_repo.get_by_id(parent_document_id, user_id=None)
+            parent_doc = self.document_repo.get_by_id(parent_document_id, user_id=user_id)
             if parent_doc:
                 version_number = parent_doc.version_number + 1
             else:
@@ -48,24 +48,25 @@ class DocumentService:
             content_hash=content_hash,
             storage_path=storage_path,
             version_number=version_number,
-            parent_document_id=parent_document_id
+            parent_document_id=parent_document_id,
+            user_id=user_id
         )
-        self.document_repo.create(db_document, user_id=None)
+        self.document_repo.create(db_document, user_id=user_id)
 
         # Parse and chunk the document
-        await self.parser_service.parse_document(db_document)
+        await self.parser_service.parse_document(db_document, user_id=user_id)
 
         return db_document
 
-    async def get_document(self, document_id: str) -> Document:
-        return self.document_repo.get_by_id(document_id, user_id=None)
+    async def get_document(self, document_id: str, user_id: str) -> Document:
+        return self.document_repo.get_by_id(document_id, user_id=user_id)
 
-    async def get_all_documents(self) -> List[Document]:
-        return self.document_repo.get_all(user_id=None)
+    async def get_all_documents(self, user_id: str) -> List[Document]:
+        return self.document_repo.get_all(user_id=user_id)
 
-    async def get_clauses(self, document_id: str) -> List[Clause]:
-        clauses = self.clause_repo.get_document_clauses(document_id, user_id=None)
-        chunks = self.chunk_repo.get_chunks(document_id, user_id=None)
+    async def get_clauses(self, document_id: str, user_id: str) -> List[Clause]:
+        clauses = self.clause_repo.get_document_clauses(document_id, user_id=user_id)
+        chunks = self.chunk_repo.get_chunks(document_id, user_id=user_id)
         
         for clause in clauses:
             clause.page_number = 1

@@ -2,6 +2,7 @@ import React from 'react';
 import { FileText, LayoutDashboard, SplitSquareHorizontal, Download, Activity, Settings, ChevronLeft, ChevronRight, Scale, LogOut, User as UserIcon } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useAuth } from '../../context/AuthContext';
+import logoImg from '../../assets/logo.png';
 import './layout.css';
 
 const Sidebar = ({ isCollapsed, setIsCollapsed, activeRoute, setActiveRoute }) => {
@@ -18,10 +19,27 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, activeRoute, setActiveRoute }) =
 
   return (
     <div className="layout-sidebar" style={{ width: isCollapsed ? '72px' : '280px' }}>
-      <div className="sidebar-logo">
-        <Scale size={24} color="var(--text-primary)" />
-        {!isCollapsed && <span>ClauseIQ</span>}
-      </div>
+      {!isCollapsed ? (
+        <div className="sidebar-logo" style={{ 
+          padding: '1.5rem 1.5rem', 
+          justifyContent: 'flex-start',
+          overflow: 'hidden',
+          width: '100%'
+        }}>
+          <img 
+            src={logoImg} 
+            alt="ClauseIQ Logo" 
+            style={{ 
+              height: '65px', 
+              width: 'auto', 
+              objectFit: 'contain',
+              display: 'block'
+            }} 
+          />
+        </div>
+      ) : (
+        <div style={{ height: '84px' }} />
+      )}
 
       <nav className="sidebar-nav">
         {navItems.map((item) => (

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Shield, Key, Mail, ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import logoImg from '../assets/logo.png';
 
 const Register = ({ onToggle, isModal = false }) => {
   const { register } = useAuth();
@@ -21,6 +22,25 @@ const Register = ({ onToggle, isModal = false }) => {
       setError('Passwords do not match');
       return;
     }
+    
+    // Password policy validation
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters long');
+      return;
+    }
+    if (!/[A-Z]/.test(password)) {
+      setError('Password must contain at least one uppercase letter');
+      return;
+    }
+    if (!/[a-z]/.test(password)) {
+      setError('Password must contain at least one lowercase letter');
+      return;
+    }
+    if (!/[0-9]/.test(password)) {
+      setError('Password must contain at least one digit');
+      return;
+    }
+
     setError('');
     setSubmitting(true);
     
@@ -51,20 +71,7 @@ const Register = ({ onToggle, isModal = false }) => {
     >
       {/* Brand Header */}
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '2rem' }}>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          width: '48px',
-          height: '48px',
-          borderRadius: '12px',
-          background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.02) 100%)',
-          border: '1px solid rgba(255, 255, 255, 0.15)',
-          marginBottom: '1rem',
-          color: '#fff'
-        }}>
-          <Shield size={22} />
-        </div>
+        <img src={logoImg} alt="ClauseIQ" style={{ height: '56px', width: 'auto', objectFit: 'contain', marginBottom: '1rem' }} />
         <h2 style={{
           fontSize: '1.75rem',
           fontWeight: 700,

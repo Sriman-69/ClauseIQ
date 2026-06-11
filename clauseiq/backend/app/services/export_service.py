@@ -20,16 +20,16 @@ class ExportService:
         self.checklist_service = ChecklistService(db)
         self.risk_service = RiskService(db)
 
-    async def export_report(self, document_id: str, export_format: str = 'pdf') -> dict:
-        document = self.document_repo.get_by_id(document_id, user_id=None)
+    async def export_report(self, document_id: str, user_id: str, export_format: str = 'pdf') -> dict:
+        document = self.document_repo.get_by_id(document_id, user_id=user_id)
         if not document:
             raise ValueError("Document not found")
 
         # Reads directly from cache because of Snapshot implementation!
         summary, checklist, risks = await asyncio.gather(
-            self.summary_service.generate_summary(document_id),
-            self.checklist_service.generate_checklist(document_id),
-            self.risk_service.analyze_risks(document_id)
+            self.summary_service.generate_summary(document_id, user_id=user_id),
+            self.checklist_service.generate_checklist(document_id, user_id=user_id),
+            self.risk_service.analyze_risks(document_id, user_id=user_id)
         )
 
         EXPORT_DIR = "exports"

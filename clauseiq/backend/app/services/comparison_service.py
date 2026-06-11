@@ -11,15 +11,15 @@ class ComparisonService:
         self.clause_repo = ClauseRepository(db)
         self.change_service = ChangeAnalysisService()
 
-    async def compare_documents(self, doc_a_id: str, doc_b_id: str) -> dict:
-        doc_a = self.document_repo.get_by_id(doc_a_id, user_id=None)
-        doc_b = self.document_repo.get_by_id(doc_b_id, user_id=None)
+    async def compare_documents(self, doc_a_id: str, doc_b_id: str, user_id: str) -> dict:
+        doc_a = self.document_repo.get_by_id(doc_a_id, user_id=user_id)
+        doc_b = self.document_repo.get_by_id(doc_b_id, user_id=user_id)
         
         if not doc_a or not doc_b:
             raise ValueError("One or both documents not found")
 
-        clauses_a = self.clause_repo.get_document_clauses(doc_a_id, user_id=None)
-        clauses_b = self.clause_repo.get_document_clauses(doc_b_id, user_id=None)
+        clauses_a = self.clause_repo.get_document_clauses(doc_a_id, user_id=user_id)
+        clauses_b = self.clause_repo.get_document_clauses(doc_b_id, user_id=user_id)
 
         added = []
         removed = []
@@ -56,7 +56,7 @@ class ComparisonService:
                         "content": a.content
                     })
                 else:
-                    analysis = await self.change_service.analyze_change(a.content, best_match.content)
+                    analysis = await self.change_service.analyze_change(a.content, best_match.content, user_id=user_id)
                     modified.append({
                         "old_clause": {"clause_id": a.clause_identifier, "title": a.title, "content": a.content},
                         "new_clause": {"clause_id": best_match.clause_identifier, "title": best_match.title, "content": best_match.content},

@@ -8,23 +8,38 @@ from app.db.session import get_db
 from app.models.document import AnalysisSnapshot, Document
 from app.repositories.document_repository import DocumentRepository
 from app.repositories.snapshot_repository import SnapshotRepository
+from app.api.dependencies.auth import get_current_user
+from app.models.user import User
+from app.repositories.activity_log_repository import ActivityLogRepository
 
 router = APIRouter()
 export_service = ComparisonExportService()
 
 @router.post("/compare")
-async def compare_documents(request: ComparisonRequest, db: Session = Depends(get_db)):
+async def compare_documents(
+    request: ComparisonRequest, 
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     try:
+        document_repo = DocumentRepository(db)
+        doc_a = document_repo.get_by_id(request.doc_a_id, user_id=None)
+        doc_b = document_repo.get_by_id(request.doc_b_id, user_id=None)
+        if not doc_a or not doc_b:
+            raise HTTPException(status_code=404, detail="One or both documents not found")
+        if doc_a.user_id != current_user.id or doc_b.user_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Forbidden: You do not own one or both of these documents")
+
         snapshot_repo = SnapshotRepository(db)
         comparison_service = ComparisonService(db)
         cache_key = f"{request.doc_a_id}_{request.doc_b_id}"
         
         # Check cache
-        cached = snapshot_repo.get_snapshot(cache_key, "comparison")
+        cached = snapshot_repo.get_snapshot(cache_key, "comparison", user_id=current_user.id)
         if cached:
             return json.loads(cached.result_json)
         
-        result = await comparison_service.compare_documents(request.doc_a_id, request.doc_b_id)
+        result = await comparison_service.compare_documents(request.doc_a_id, request.doc_b_id, user_id=current_user.id)
         
         # Calculate Risk Delta and Compliance Delta simply
         risk_increased = []
@@ -58,8 +73,12 @@ async def compare_documents(request: ComparisonRequest, db: Session = Depends(ge
             analysis_type="comparison",
             result_json=json.dumps(final_response)
         )
-        snapshot_repo.create_snapshot(cache_entry)
+        snapshot_repo.create_snapshot(cache_entry, user_id=current_user.id)
         
+        # Log the activity
+        activity_log_repo = ActivityLogRepository(db)
+        activity_log_repo.log_activity(user_id=current_user.id, action="comparison", document_id=request.doc_b_id)
+
         return final_response
     except HTTPException:
         raise
@@ -69,10 +88,14 @@ async def compare_documents(request: ComparisonRequest, db: Session = Depends(ge
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/compare/{comparison_id}")
-async def get_comparison(comparison_id: str, db: Session = Depends(get_db)):
+async def get_comparison(
+    comparison_id: str, 
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     try:
         snapshot_repo = SnapshotRepository(db)
-        cached = snapshot_repo.get_snapshot(comparison_id, "comparison")
+        cached = snapshot_repo.get_snapshot(comparison_id, "comparison", user_id=current_user.id)
         if cached:
             return json.loads(cached.result_json)
         raise HTTPException(status_code=404, detail="Comparison not found")
@@ -84,26 +107,37 @@ async def get_comparison(comparison_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/export/comparison")
-async def export_comparison(request: ComparisonRequest, db: Session = Depends(get_db)):
+async def export_comparison(
+    request: ComparisonRequest, 
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     try:
         document_repo = DocumentRepository(db)
         snapshot_repo = SnapshotRepository(db)
         
-        doc_a = document_repo.get_by_id(request.doc_a_id)
-        doc_b = document_repo.get_by_id(request.doc_b_id)
+        doc_a = document_repo.get_by_id(request.doc_a_id, user_id=None)
+        doc_b = document_repo.get_by_id(request.doc_b_id, user_id=None)
         
         if not doc_a or not doc_b:
             raise HTTPException(status_code=404, detail="One or both documents not found")
+        if doc_a.user_id != current_user.id or doc_b.user_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Forbidden: You do not own one or both of these documents")
         
         cache_key = f"{request.doc_a_id}_{request.doc_b_id}"
-        cached = snapshot_repo.get_snapshot(cache_key, "comparison")
+        cached = snapshot_repo.get_snapshot(cache_key, "comparison", user_id=current_user.id)
         
         if cached:
             result = json.loads(cached.result_json)
         else:
-            result = await compare_documents(request, db)
+            result = await compare_documents(request, db, current_user=current_user)
             
         download = await export_service.export_comparison_report(doc_a.filename, doc_b.filename, result['comparison_result'])
+        
+        # Log the activity
+        activity_log_repo = ActivityLogRepository(db)
+        activity_log_repo.log_activity(user_id=current_user.id, action="comparison", document_id=request.doc_b_id)
+
         return download
     except HTTPException:
         raise

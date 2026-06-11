@@ -36,16 +36,6 @@
   position: relative;
 }
 
-.layout-context {
-  background-color: rgba(22, 22, 26, 0.35);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border-left: 1px solid rgba(255, 255, 255, 0.06);
-  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  overflow-y: auto;
-  flex-shrink: 0;
-}
-
 /* Sidebar Nav */
 .sidebar-logo {
   display: flex;

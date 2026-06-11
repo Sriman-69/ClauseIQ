@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional, List
 
 from datetime import datetime
@@ -16,8 +16,7 @@ class Document(DocumentBase):
     parent_document_id: Optional[str] = None
     upload_timestamp: datetime
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class Chunk(BaseModel):
     id: str
@@ -26,8 +25,7 @@ class Chunk(BaseModel):
     section: Optional[str]
     content: str
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class ClauseResponse(BaseModel):
     id: str
@@ -37,5 +35,4 @@ class ClauseResponse(BaseModel):
     content: str
     page_number: Optional[int] = 1
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

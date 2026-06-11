@@ -4,14 +4,35 @@ from typing import List
 from app.db.session import get_db
 from app.services.checklist_service import ChecklistService
 from app.schemas.analysis import ChecklistItem
+from app.api.dependencies.auth import get_current_user
+from app.models.user import User
+from app.repositories.document_repository import DocumentRepository
+from app.repositories.activity_log_repository import ActivityLogRepository
 
 router = APIRouter()
 
 @router.get("/documents/{document_id}/checklist", response_model=List[ChecklistItem])
-async def generate_checklist(document_id: str, db: Session = Depends(get_db)):
+async def generate_checklist(
+    document_id: str, 
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    doc_repo = DocumentRepository(db)
+    doc = doc_repo.get_by_id(document_id, user_id=None)
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+    if doc.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Forbidden: You do not own this document")
+
     try:
         checklist_service = ChecklistService(db)
-        return await checklist_service.generate_checklist(document_id)
+        result = await checklist_service.generate_checklist(document_id, user_id=current_user.id)
+        
+        # Log the activity
+        activity_log_repo = ActivityLogRepository(db)
+        activity_log_repo.log_activity(user_id=current_user.id, action="checklist", document_id=document_id)
+        
+        return result
     except HTTPException:
         raise
     except Exception as e:

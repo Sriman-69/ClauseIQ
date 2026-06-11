@@ -8,9 +8,9 @@ class ChatService:
         self.search_service = SearchService()
         self.ai_service = AIService()
 
-    async def chat(self, query: str, document_id: str = None, conversation_id: str = None) -> dict:
+    async def chat(self, query: str, user_id: str, document_id: str = None, conversation_id: str = None) -> dict:
         # 1. Retrieve relevant chunks
-        search_results = await self.search_service.search(query, document_id=document_id, top_k=5)
+        search_results = await self.search_service.search(query, user_id=user_id, document_id=document_id, top_k=5)
         
         context_text = ""
         citations = []
@@ -35,7 +35,7 @@ class ChatService:
         """
 
         try:
-            answer = await self.ai_service.generate_text(prompt)
+            answer = await self.ai_service.generate_text(prompt, user_id=user_id)
         except QuotaExceededException as e:
             answer = e.message
 

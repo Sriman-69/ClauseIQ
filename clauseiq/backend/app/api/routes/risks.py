@@ -3,14 +3,35 @@ from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.services.risk_service import RiskService
 from app.schemas.analysis import RiskResponse
+from app.api.dependencies.auth import get_current_user
+from app.models.user import User
+from app.repositories.document_repository import DocumentRepository
+from app.repositories.activity_log_repository import ActivityLogRepository
 
 router = APIRouter()
 
 @router.get("/documents/{document_id}/risks", response_model=RiskResponse)
-async def analyze_risks(document_id: str, db: Session = Depends(get_db)):
+async def analyze_risks(
+    document_id: str, 
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    doc_repo = DocumentRepository(db)
+    doc = doc_repo.get_by_id(document_id, user_id=None)
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+    if doc.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Forbidden: You do not own this document")
+
     try:
         risk_service = RiskService(db)
-        return await risk_service.analyze_risks(document_id)
+        result = await risk_service.analyze_risks(document_id, user_id=current_user.id)
+        
+        # Log the activity
+        activity_log_repo = ActivityLogRepository(db)
+        activity_log_repo.log_activity(user_id=current_user.id, action="risk_analysis", document_id=document_id)
+        
+        return result
     except HTTPException:
         raise
     except Exception as e:

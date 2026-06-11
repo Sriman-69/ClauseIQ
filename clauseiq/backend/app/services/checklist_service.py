@@ -16,24 +16,24 @@ class ChecklistService:
         self.chunk_repo = ChunkRepository(db)
         self.ai_service = AIService()
 
-    def _log_metric(self, action: str):
-        self.metrics_repo.increment(action)
+    def _log_metric(self, action: str, user_id: str):
+        self.metrics_repo.increment(action, user_id=user_id)
 
-    async def generate_checklist(self, document_id: str) -> list:
-        document = self.document_repo.get_by_id(document_id, user_id=None)
+    async def generate_checklist(self, document_id: str, user_id: str) -> list:
+        document = self.document_repo.get_by_id(document_id, user_id=user_id)
         if not document:
             raise ValueError("Document not found")
 
         # 1. Check Snapshot/Cache
-        snapshot = self.snapshot_repo.get_snapshot(document_id, "checklist", document.content_hash, user_id=None)
+        snapshot = self.snapshot_repo.get_snapshot(document_id, "checklist", user_id, document.content_hash)
 
         if snapshot:
-            self._log_metric("cache_hit")
+            self._log_metric("cache_hit", user_id=user_id)
             return json.loads(snapshot.result_json)
 
-        self._log_metric("cache_miss")
+        self._log_metric("cache_miss", user_id=user_id)
 
-        chunks = self.chunk_repo.get_chunks(document_id, user_id=None)
+        chunks = self.chunk_repo.get_chunks(document_id, user_id=user_id)
         content = "\n\n".join([f"Page {chunk.page}: {chunk.content}" for chunk in chunks])
 
         prompt = f"""
@@ -51,7 +51,7 @@ class ChecklistService:
         """
 
         try:
-            result = await self.ai_service.generate_json(prompt)
+            result = await self.ai_service.generate_json(prompt, user_id=user_id)
         except QuotaExceededException:
             print("Checklist: Falling back to heuristic rules.")
             # OFFLINE FALLBACK: Heuristic Checks
@@ -79,8 +79,9 @@ class ChecklistService:
             document_id=document_id,
             document_hash=document.content_hash,
             analysis_type="checklist",
-            result_json=json.dumps(result)
+            result_json=json.dumps(result),
+            user_id=user_id
         )
-        self.snapshot_repo.create_snapshot(new_snapshot, user_id=None)
+        self.snapshot_repo.create_snapshot(new_snapshot, user_id=user_id)
             
         return result

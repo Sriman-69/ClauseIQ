@@ -7,6 +7,7 @@ import { Button } from '../ui/Button';
 import { useAuth } from '../../context/AuthContext';
 import Login from '../../pages/Login';
 import Register from '../../pages/Register';
+import logoImg from '../../assets/logo.png';
 import './landing.css';
 
 const LandingPage = ({ onEnterApp }) => {
@@ -145,25 +146,8 @@ const LandingPage = ({ onEnterApp }) => {
         backdropFilter: 'blur(8px)',
         WebkitBackdropFilter: 'blur(8px)'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '32px',
-            height: '32px',
-            borderRadius: '8px',
-            background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(168, 85, 247, 0.2) 100%)',
-            border: '1px solid rgba(99, 102, 241, 0.3)',
-            color: '#fff'
-          }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v1" />
-              <path d="M18 8h4a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-4" />
-              <circle cx="8" cy="12" r="2" />
-            </svg>
-          </div>
-          <span style={{ fontWeight: 700, fontSize: '1.1rem', letterSpacing: '-0.015em', color: '#fff' }}>ClauseIQ</span>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <img src={logoImg} alt="ClauseIQ Logo" style={{ height: '70px', width: 'auto', objectFit: 'contain' }} />
         </div>
 
         <div>
@@ -172,6 +156,29 @@ const LandingPage = ({ onEnterApp }) => {
               <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                 Signed in as <strong style={{ color: '#fff', fontWeight: 500 }}>{currentUser?.email}</strong>
               </span>
+              <button 
+                onClick={() => onEnterApp(null)}
+                style={{
+                  background: 'var(--brand-primary)',
+                  border: '1px solid var(--brand-primary)',
+                  color: '#fff',
+                  padding: '0.45rem 1.15rem',
+                  borderRadius: '30px',
+                  cursor: 'pointer',
+                  fontSize: '0.825rem',
+                  fontWeight: 600,
+                  transition: 'all 0.2s',
+                  outline: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.25rem'
+                }}
+                onMouseOver={e => e.currentTarget.style.background = 'var(--brand-hover)'}
+                onMouseOut={e => e.currentTarget.style.background = 'var(--brand-primary)'}
+              >
+                Enter App
+                <ArrowRight size={13} />
+              </button>
               <button 
                 onClick={logout}
                 style={{

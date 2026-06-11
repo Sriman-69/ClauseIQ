@@ -15,12 +15,12 @@ class ClauseExtractionService:
         self.chunk_repo = ChunkRepository(db)
         self.ai_service = AIService()
 
-    async def extract_clauses(self, document_id: str):
-        document = self.document_repo.get_by_id(document_id, user_id=None)
+    async def extract_clauses(self, document_id: str, user_id: str):
+        document = self.document_repo.get_by_id(document_id, user_id=user_id)
         if not document:
             raise ValueError("Document not found")
 
-        chunks = self.chunk_repo.get_chunks(document_id, user_id=None)
+        chunks = self.chunk_repo.get_chunks(document_id, user_id=user_id)
         content = "\n\n".join([f"Page {chunk.page}: {chunk.content}" for chunk in chunks])
 
         prompt = f"""
@@ -42,7 +42,7 @@ class ClauseExtractionService:
         
         clauses_data = []
         try:
-            clauses_data = await self.ai_service.generate_json(prompt)
+            clauses_data = await self.ai_service.generate_json(prompt, user_id=user_id)
         except QuotaExceededException:
             print("Clause Extraction: Quota exceeded, falling back to Regex heuristic.")
             # HYBRID FALLBACK: Regex grouping
@@ -62,8 +62,9 @@ class ClauseExtractionService:
                 document_id=document_id,
                 clause_identifier=c_data.get('clause_id', 'Unknown'),
                 title=c_data.get('title', 'Untitled'),
-                content=c_data.get('content', '')
+                content=c_data.get('content', ''),
+                user_id=user_id
             )
-            self.clause_repo.create_clause(clause, user_id=None)
+            self.clause_repo.create_clause(clause, user_id=user_id)
 
 

@@ -6,5 +6,5 @@ class IVectorStore(ABC):
         pass
 
     @abstractmethod
-    def search(self, query_embedding: list, k: int, document_id: str = None) -> list:
+    def search(self, query_embedding: list, k: int, user_id: str, document_id: str = None) -> list:
         pass

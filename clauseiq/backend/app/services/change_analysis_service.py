@@ -7,7 +7,7 @@ class ChangeAnalysisService:
     def __init__(self):
         self.ai_service = AIService()
 
-    async def analyze_change(self, old_text: str, new_text: str) -> dict:
+    async def analyze_change(self, old_text: str, new_text: str, user_id: str = None) -> dict:
         prompt = f"""
         You are a legal AI that analyzes the difference between two versions of a document clause.
         Compare the OLD CLAUSE to the NEW CLAUSE.
@@ -29,7 +29,7 @@ class ChangeAnalysisService:
         """
 
         try:
-            result = await self.ai_service.generate_json(prompt)
+            result = await self.ai_service.generate_json(prompt, user_id=user_id)
             return result
         except QuotaExceededException:
             return {

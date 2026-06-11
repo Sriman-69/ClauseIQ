@@ -1,15 +1,11 @@
 import React, { useState } from 'react';
 import Sidebar from './Sidebar';
-import ContextPanel from './ContextPanel';
 import './layout.css';
 
 const DashboardLayout = ({ 
   children, 
   activeRoute, 
-  setActiveRoute, 
-  contextContent, 
-  isContextOpen, 
-  setIsContextOpen 
+  setActiveRoute
 }) => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
@@ -27,10 +23,6 @@ const DashboardLayout = ({
           {children}
         </div>
       </main>
-
-      <ContextPanel isExpanded={isContextOpen} setIsExpanded={setIsContextOpen}>
-        {contextContent}
-      </ContextPanel>
     </div>
   );
 };

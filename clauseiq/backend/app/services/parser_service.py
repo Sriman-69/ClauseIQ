@@ -11,7 +11,7 @@ class ParserService:
         self.storage_provider = storage_provider or LocalStorageProvider()
         self.embedding_service = EmbeddingService()
 
-    async def parse_document(self, document):
+    async def parse_document(self, document, user_id: str):
         local_path = self.storage_provider.get_file_path(document.storage_path)
         doc = fitz.open(local_path)
         chunks = []
@@ -26,9 +26,10 @@ class ParserService:
                     db_chunk = Chunk(
                         document_id=document.id,
                         page=page_num + 1,
-                        content=para.strip()
+                        content=para.strip(),
+                        user_id=user_id
                     )
-                    self.chunk_repo.add_chunk(db_chunk)
+                    self.chunk_repo.add_chunk(db_chunk, user_id=user_id)
                     chunks.append(db_chunk)
         
         # Embed chunks
@@ -41,7 +42,7 @@ class ParserService:
         print("Saving to FAISS...")
         self.embedding_service.vector_store.add_embeddings(embeddings, [{
             "document_id": str(chunk.document_id), 
-            "user_id": None,
+            "user_id": str(user_id),
             "page": chunk.page, 
             "section": chunk.section, 
             "document_name": document.filename,
@@ -52,7 +53,7 @@ class ParserService:
         try:
             from app.services.clause_extraction_service import ClauseExtractionService
             clause_service = ClauseExtractionService(self.db)
-            await clause_service.extract_clauses(document.id)
+            await clause_service.extract_clauses(document.id, user_id=user_id)
             print("Clauses extracted and saved.")
         except Exception as e:
             print(f"Clause extraction failed: {e}")
